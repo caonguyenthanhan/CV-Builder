@@ -1,4 +1,19 @@
 export interface CVData {
+  themeColor: string;
+  settings: {
+    accentColor: 'blue' | 'emerald' | 'neutral';
+    fontFamily: 'inter' | 'serif' | 'mono';
+    density: 'compact' | 'normal' | 'relaxed';
+  };
+  sections: {
+    summary: boolean;
+    experience: boolean;
+    projects: boolean;
+    skills: boolean;
+    education: boolean;
+    certifications: boolean;
+    languages: boolean;
+  };
   personalInfo: {
     fullName: string;
     title: string;
@@ -49,7 +64,6 @@ export interface CVData {
     language: string;
     proficiency: string;
   }[];
-  themeColor: string;
 }
 
 export const emptyCVData: CVData = {

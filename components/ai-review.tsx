@@ -28,6 +28,7 @@ export function AIReview({ cvData }: AIReviewProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [review, setReview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>("");
   const [showKeyInput, setShowKeyInput] = useState(false);
 
@@ -42,13 +43,21 @@ export function AIReview({ cvData }: AIReviewProps) {
     if (userApiKey.trim()) {
       localStorage.setItem("gemini_api_key", userApiKey.trim());
       setShowKeyInput(false);
+      setError(null);
       handleReview(userApiKey.trim());
     }
+  };
+
+  const handleChangeKey = () => {
+    setShowKeyInput(true);
+    setError(null);
+    setReview(null);
   };
 
   const handleReview = async (keyOverride?: string) => {
     setLoading(true);
     setReview(null);
+    setError(null);
     setShowKeyInput(false);
 
     try {
@@ -100,11 +109,13 @@ export function AIReview({ cvData }: AIReviewProps) {
       });
 
       setReview(response.text || "No feedback received.");
-    } catch (error) {
-      console.error("AI Review Error:", error);
-      setReview("An error occurred while reviewing the CV. Please check your API Key and try again.");
-      // If error might be auth related, show input again?
-      // For now just show error message.
+    } catch (err: any) {
+      console.error("AI Review Error:", err);
+      let errorMessage = "An error occurred while reviewing the CV.";
+      if (err.message) {
+        errorMessage += ` (${err.message})`;
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -190,6 +201,22 @@ export function AIReview({ cvData }: AIReviewProps) {
                 </div>
               </div>
             </div>
+          ) : error ? (
+            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 p-4">
+              <div className="bg-red-50 text-red-800 p-4 rounded-lg flex flex-col items-center gap-2 max-w-md">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+                <p className="font-semibold">Đã xảy ra lỗi</p>
+                <p className="text-sm">{error}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleChangeKey}>
+                  Nhập lại API Key
+                </Button>
+                <Button onClick={() => handleReview()}>
+                  Thử lại
+                </Button>
+              </div>
+            </div>
           ) : review ? (
             <ScrollArea className="h-full pr-4">
               <div className="prose prose-sm max-w-none prose-indigo whitespace-pre-wrap">
@@ -206,7 +233,7 @@ export function AIReview({ cvData }: AIReviewProps) {
 
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => setIsOpen(false)}>Đóng</Button>
-          {!showKeyInput && (
+          {!showKeyInput && !loading && !error && (
             <Button onClick={() => handleReview()} disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
               {review ? "Đánh giá lại" : "Bắt đầu đánh giá"}
