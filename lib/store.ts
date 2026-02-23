@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CVData, initialCVData } from '@/types/cv';
+import { CVData, initialCVData, emptyCVData } from '@/types/cv';
 
 interface CVStore {
   cvData: CVData;
   setCVData: (data: CVData) => void;
+  resetCVData: () => void;
   updatePersonalInfo: (info: Partial<CVData['personalInfo']>) => void;
   updateSummary: (summary: string) => void;
   addSkill: () => void;
@@ -25,6 +26,7 @@ interface CVStore {
   addLanguage: () => void;
   removeLanguage: (index: number) => void;
   updateLanguage: (index: number, lang: CVData['languages'][0]) => void;
+  updateThemeColor: (color: string) => void;
   reset: () => void;
 }
 
@@ -33,6 +35,9 @@ export const useCVStore = create<CVStore>()(
     (set) => ({
       cvData: initialCVData,
       setCVData: (data) => set({ cvData: data }),
+      resetCVData: () => set({ cvData: emptyCVData }),
+      updateThemeColor: (color) =>
+        set((state) => ({ cvData: { ...state.cvData, themeColor: color } })),
       updatePersonalInfo: (info) =>
         set((state) => ({
           cvData: { ...state.cvData, personalInfo: { ...state.cvData.personalInfo, ...info } },

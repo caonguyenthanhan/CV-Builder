@@ -10,82 +10,128 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
 
 import { AIReview } from "@/components/ai-review";
+import { CVImport } from "@/components/cv-import";
+import { ATSChecklist } from "@/components/ats-checklist";
+import { emptyCVData } from "@/types/cv";
 
 export function CVForm() {
   const store = useCVStore();
-  const { cvData } = store;
+  const { cvData, resetCVData } = store;
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
+
+  const handleClearData = () => {
+    if (confirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu CV không? Hành động này không thể hoàn tác.")) {
+      resetCVData();
+    }
+  };
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-20">
       {/* Personal Info */}
       <Card>
-        <CardHeader>
-          <CardTitle>Thông tin cá nhân</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Thông tin cá nhân & Giao diện</CardTitle>
+          <div className="flex gap-2">
+            <Button variant="destructive" size="icon" onClick={handleClearData} title="Xóa toàn bộ dữ liệu">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            <ATSChecklist cvData={cvData} />
+            <CVImport />
+          </div>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="fullName">Họ và tên</Label>
-            <Input
-              id="fullName"
-              value={cvData.personalInfo.fullName}
-              onChange={(e) => store.updatePersonalInfo({ fullName: e.target.value })}
-            />
+            <Label htmlFor="themeColor">Màu chủ đạo</Label>
+            <div className="flex gap-2">
+              <Input
+                id="themeColor"
+                type="color"
+                className="w-12 h-10 p-1 cursor-pointer"
+                value={cvData.themeColor || "#2563eb"}
+                onChange={(e) => store.updateThemeColor(e.target.value)}
+              />
+              <Input
+                value={cvData.themeColor || "#2563eb"}
+                onChange={(e) => store.updateThemeColor(e.target.value)}
+                className="w-32"
+                placeholder="#000000"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="title">Chức danh</Label>
-            <Input
-              id="title"
-              value={cvData.personalInfo.title}
-              onChange={(e) => store.updatePersonalInfo({ title: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              value={cvData.personalInfo.email}
-              onChange={(e) => store.updatePersonalInfo({ email: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Số điện thoại</Label>
-            <Input
-              id="phone"
-              value={cvData.personalInfo.phone}
-              onChange={(e) => store.updatePersonalInfo({ phone: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="location">Địa chỉ</Label>
-            <Input
-              id="location"
-              value={cvData.personalInfo.location}
-              onChange={(e) => store.updatePersonalInfo({ location: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="linkedin">LinkedIn</Label>
-            <Input
-              id="linkedin"
-              value={cvData.personalInfo.linkedin || ""}
-              onChange={(e) => store.updatePersonalInfo({ linkedin: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="github">GitHub</Label>
-            <Input
-              id="github"
-              value={cvData.personalInfo.github || ""}
-              onChange={(e) => store.updatePersonalInfo({ github: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="website">Website</Label>
-            <Input
-              id="website"
-              value={cvData.personalInfo.website || ""}
-              onChange={(e) => store.updatePersonalInfo({ website: e.target.value })}
-            />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Họ và tên</Label>
+              <Input
+                id="fullName"
+                value={cvData.personalInfo.fullName}
+                onChange={(e) => store.updatePersonalInfo({ fullName: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="title">Chức danh</Label>
+              <Input
+                id="title"
+                value={cvData.personalInfo.title}
+                onChange={(e) => store.updatePersonalInfo({ title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                value={cvData.personalInfo.email}
+                onChange={(e) => store.updatePersonalInfo({ email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Số điện thoại</Label>
+              <Input
+                id="phone"
+                value={cvData.personalInfo.phone}
+                onChange={(e) => store.updatePersonalInfo({ phone: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Địa chỉ</Label>
+              <Input
+                id="location"
+                value={cvData.personalInfo.location}
+                onChange={(e) => store.updatePersonalInfo({ location: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="linkedin">LinkedIn</Label>
+              <Input
+                id="linkedin"
+                value={cvData.personalInfo.linkedin || ""}
+                onChange={(e) => store.updatePersonalInfo({ linkedin: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="github">GitHub</Label>
+              <Input
+                id="github"
+                value={cvData.personalInfo.github || ""}
+                onChange={(e) => store.updatePersonalInfo({ github: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                value={cvData.personalInfo.website || ""}
+                onChange={(e) => store.updatePersonalInfo({ website: e.target.value })}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

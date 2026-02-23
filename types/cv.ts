@@ -49,9 +49,31 @@ export interface CVData {
     language: string;
     proficiency: string;
   }[];
+  themeColor: string;
 }
 
+export const emptyCVData: CVData = {
+  themeColor: "#2563eb",
+  personalInfo: {
+    fullName: "",
+    title: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    github: "",
+  },
+  summary: "",
+  skills: [],
+  experience: [],
+  projects: [],
+  education: [],
+  certifications: [],
+  languages: [],
+};
+
 export const initialCVData: CVData = {
+  themeColor: "#2563eb", // Default blue-600
   personalInfo: {
     fullName: "NGUYỄN VĂN A",
     title: "SOFTWARE ENGINEER",
