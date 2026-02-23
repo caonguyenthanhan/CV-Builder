@@ -6,7 +6,8 @@
 
 This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://ai.studio/apps/c379b573-28f9-4a5f-87c9-8fa8d97f7f38
+View app in AI Studio: https://ai.studio/apps/c379b573-28f9-4a5f-87c9-8fa8d97f7f38
+View app in public: https://cv-builder-nine-xi.vercel.app/
 
 ## Run Locally
 
