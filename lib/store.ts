@@ -27,6 +27,8 @@ interface CVStore {
   removeLanguage: (index: number) => void;
   updateLanguage: (index: number, lang: CVData['languages'][0]) => void;
   updateThemeColor: (color: string) => void;
+  updateSettings: (settings: Partial<CVData['settings']>) => void;
+  toggleSection: (section: keyof CVData['sections']) => void;
   reset: () => void;
 }
 
@@ -38,6 +40,23 @@ export const useCVStore = create<CVStore>()(
       resetCVData: () => set({ cvData: emptyCVData }),
       updateThemeColor: (color) =>
         set((state) => ({ cvData: { ...state.cvData, themeColor: color } })),
+      updateSettings: (settings) =>
+        set((state) => ({
+          cvData: {
+            ...state.cvData,
+            settings: { ...state.cvData.settings, ...settings },
+          },
+        })),
+      toggleSection: (section) =>
+        set((state) => ({
+          cvData: {
+            ...state.cvData,
+            sections: {
+              ...state.cvData.sections,
+              [section]: !state.cvData.sections[section],
+            },
+          },
+        })),
       updatePersonalInfo: (info) =>
         set((state) => ({
           cvData: { ...state.cvData, personalInfo: { ...state.cvData.personalInfo, ...info } },

@@ -12,11 +12,12 @@ import { Plus, Trash2 } from "lucide-react";
 import { AIReview } from "@/components/ai-review";
 import { CVImport } from "@/components/cv-import";
 import { ATSChecklist } from "@/components/ats-checklist";
+import { DataManager } from "@/components/data-manager";
 import { emptyCVData } from "@/types/cv";
 
 export function CVForm() {
   const store = useCVStore();
-  const { cvData, resetCVData } = store;
+  const { cvData, resetCVData, updateSettings, toggleSection } = store;
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -35,6 +36,62 @@ export function CVForm() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-20">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">CV Builder</h2>
+        <DataManager />
+      </div>
+
+      {/* Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Cấu hình Giao diện</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Màu sắc chủ đạo</Label>
+              <div className="flex gap-2">
+                {(['blue', 'emerald', 'neutral'] as const).map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => updateSettings({ accentColor: color })}
+                    className={`w-8 h-8 rounded-full border-2 ${
+                      cvData.settings.accentColor === color ? 'border-black ring-2 ring-offset-2 ring-black' : 'border-transparent'
+                    }`}
+                    style={{ backgroundColor: color === 'blue' ? '#2563eb' : color === 'emerald' ? '#059669' : '#4b5563' }}
+                    title={color}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Font chữ</Label>
+              <select 
+                className="w-full p-2 border rounded-md"
+                value={cvData.settings.fontFamily}
+                onChange={(e) => updateSettings({ fontFamily: e.target.value as any })}
+              >
+                <option value="inter">Sans-serif (Inter)</option>
+                <option value="serif">Serif (Georgia)</option>
+                <option value="mono">Monospace</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Mật độ</Label>
+              <select 
+                className="w-full p-2 border rounded-md"
+                value={cvData.settings.density}
+                onChange={(e) => updateSettings({ density: e.target.value as any })}
+              >
+                <option value="compact">Gọn (Compact)</option>
+                <option value="normal">Bình thường</option>
+                <option value="relaxed">Thoáng (Relaxed)</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Personal Info */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -138,8 +195,16 @@ export function CVForm() {
 
       {/* Summary */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Tóm tắt chuyên môn</CardTitle>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="show-summary" className="text-sm font-normal text-slate-500">Hiển thị</Label>
+            <Switch 
+              id="show-summary"
+              checked={cvData.sections.summary}
+              onCheckedChange={() => toggleSection('summary')}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Textarea

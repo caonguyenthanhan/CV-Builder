@@ -54,6 +54,20 @@ export interface CVData {
 
 export const emptyCVData: CVData = {
   themeColor: "#2563eb",
+  settings: {
+    accentColor: 'blue',
+    fontFamily: 'inter',
+    density: 'normal',
+  },
+  sections: {
+    summary: true,
+    experience: true,
+    projects: true,
+    skills: true,
+    education: true,
+    certifications: true,
+    languages: true,
+  },
   personalInfo: {
     fullName: "",
     title: "",
@@ -74,6 +88,20 @@ export const emptyCVData: CVData = {
 
 export const initialCVData: CVData = {
   themeColor: "#2563eb", // Default blue-600
+  settings: {
+    accentColor: 'blue',
+    fontFamily: 'inter',
+    density: 'normal',
+  },
+  sections: {
+    summary: true,
+    experience: true,
+    projects: true,
+    skills: true,
+    education: true,
+    certifications: true,
+    languages: true,
+  },
   personalInfo: {
     fullName: "NGUYỄN VĂN A",
     title: "SOFTWARE ENGINEER",
