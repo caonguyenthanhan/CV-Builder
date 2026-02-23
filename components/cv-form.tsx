@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
 
+import { AIReview } from "@/components/ai-review";
+
 export function CVForm() {
   const store = useCVStore();
   const { cvData } = store;
@@ -394,7 +396,8 @@ export function CVForm() {
         </CardContent>
       </Card>
       
-      <div className="flex justify-center pt-8">
+      <div className="flex flex-col md:flex-row justify-center gap-4 pt-8">
+        <AIReview cvData={cvData} />
         <Button size="lg" className="w-full md:w-auto" onClick={() => window.location.href = '/preview'}>
           Xem trước & In CV
         </Button>

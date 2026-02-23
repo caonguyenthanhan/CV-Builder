@@ -26,42 +26,42 @@ export function CVPreview() {
         </div>
 
         {/* CV Content */}
-        <div className="p-12 md:p-16 space-y-8 text-slate-900 font-sans leading-relaxed print:p-0 print:m-0">
+        <div className="p-10 md:p-12 print:p-8 space-y-6 text-slate-900 font-sans leading-relaxed">
           
           {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold uppercase tracking-wide text-slate-900">
+          <div className="text-center space-y-3">
+            <h1 className="text-3xl font-bold uppercase tracking-wide text-slate-900">
               {cvData.personalInfo.fullName}
             </h1>
-            <h2 className="text-xl font-semibold uppercase tracking-wider text-slate-700">
+            <h2 className="text-lg font-semibold uppercase tracking-wider text-slate-700">
               {cvData.personalInfo.title}
             </h2>
             
-            <div className="flex flex-wrap justify-center gap-4 text-sm text-slate-600 mt-4">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-slate-600 mt-2">
               {cvData.personalInfo.phone && (
                 <div className="flex items-center gap-1">
-                  <Phone className="w-4 h-4" />
+                  <Phone className="w-3.5 h-3.5" />
                   <span>{cvData.personalInfo.phone}</span>
                 </div>
               )}
               {cvData.personalInfo.email && (
                 <div className="flex items-center gap-1">
-                  <Mail className="w-4 h-4" />
+                  <Mail className="w-3.5 h-3.5" />
                   <span>{cvData.personalInfo.email}</span>
                 </div>
               )}
               {cvData.personalInfo.location && (
                 <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-3.5 h-3.5" />
                   <span>{cvData.personalInfo.location}</span>
                 </div>
               )}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-600">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm text-slate-600">
               {cvData.personalInfo.linkedin && (
                 <div className="flex items-center gap-1">
-                  <Linkedin className="w-4 h-4" />
+                  <Linkedin className="w-3.5 h-3.5" />
                   <a href={`https://${cvData.personalInfo.linkedin.replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" className="hover:underline">
                     {cvData.personalInfo.linkedin.replace(/^https?:\/\//, '')}
                   </a>
@@ -69,7 +69,7 @@ export function CVPreview() {
               )}
               {cvData.personalInfo.github && (
                 <div className="flex items-center gap-1">
-                  <Github className="w-4 h-4" />
+                  <Github className="w-3.5 h-3.5" />
                   <a href={`https://${cvData.personalInfo.github.replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" className="hover:underline">
                     {cvData.personalInfo.github.replace(/^https?:\/\//, '')}
                   </a>
@@ -77,7 +77,7 @@ export function CVPreview() {
               )}
               {cvData.personalInfo.website && (
                 <div className="flex items-center gap-1">
-                  <Globe className="w-4 h-4" />
+                  <Globe className="w-3.5 h-3.5" />
                   <a href={`https://${cvData.personalInfo.website.replace(/^https?:\/\//, '')}`} target="_blank" rel="noreferrer" className="hover:underline">
                     {cvData.personalInfo.website.replace(/^https?:\/\//, '')}
                   </a>
@@ -86,13 +86,13 @@ export function CVPreview() {
             </div>
           </div>
 
-          <hr className="border-slate-300" />
+          <hr className="border-slate-300 my-4" />
 
           {/* Summary */}
           {cvData.summary && (
             <section>
-              <h3 className="text-xl font-bold uppercase mb-4 text-slate-900">Tóm tắt chuyên môn</h3>
-              <p className="text-slate-700 whitespace-pre-line text-justify">
+              <h3 className="text-lg font-bold uppercase mb-2 text-slate-900 border-b border-slate-200 pb-1">Tóm tắt chuyên môn</h3>
+              <p className="text-sm text-slate-700 whitespace-pre-line text-justify leading-relaxed">
                 {cvData.summary}
               </p>
             </section>
@@ -101,10 +101,10 @@ export function CVPreview() {
           {/* Skills */}
           {cvData.skills.length > 0 && (
             <section>
-              <h3 className="text-xl font-bold uppercase mb-4 text-slate-900 border-b border-slate-200 pb-2">Kỹ năng chuyên môn</h3>
-              <div className="space-y-3">
+              <h3 className="text-lg font-bold uppercase mb-3 text-slate-900 border-b border-slate-200 pb-1">Kỹ năng chuyên môn</h3>
+              <div className="space-y-2 text-sm">
                 {cvData.skills.map((skill, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-2">
+                  <div key={index} className="grid grid-cols-[140px_1fr] gap-2">
                     <span className="font-semibold text-slate-800">{skill.category}:</span>
                     <span className="text-slate-700">{skill.items}</span>
                   </div>
@@ -116,19 +116,19 @@ export function CVPreview() {
           {/* Experience */}
           {cvData.experience.length > 0 && (
             <section>
-              <h3 className="text-xl font-bold uppercase mb-6 text-slate-900 border-b border-slate-200 pb-2">Kinh nghiệm làm việc</h3>
-              <div className="space-y-8">
+              <h3 className="text-lg font-bold uppercase mb-4 text-slate-900 border-b border-slate-200 pb-1">Kinh nghiệm làm việc</h3>
+              <div className="space-y-6">
                 {cvData.experience.map((exp) => (
-                  <div key={exp.id}>
+                  <div key={exp.id} className="break-inside-avoid">
                     <div className="flex justify-between items-baseline mb-1">
-                      <h4 className="text-lg font-bold text-slate-900 uppercase">{exp.company}</h4>
-                      <span className="text-slate-600 font-medium text-sm whitespace-nowrap">
+                      <h4 className="text-base font-bold text-slate-900 uppercase">{exp.company}</h4>
+                      <span className="text-slate-600 font-medium text-xs whitespace-nowrap">
                         {exp.startDate} – {exp.endDate || "Present"}
                       </span>
                     </div>
-                    <div className="text-blue-700 font-semibold italic mb-2">{exp.position}</div>
-                    <div className="text-slate-700 pl-4">
-                      <ul className="list-disc space-y-1">
+                    <div className="text-blue-700 font-semibold italic text-sm mb-1">{exp.position}</div>
+                    <div className="text-sm text-slate-700 pl-4">
+                      <ul className="list-disc space-y-1 marker:text-slate-400">
                         {exp.description.split('\n').map((line, i) => (
                           line.trim() && <li key={i}>{line.replace(/^- /, '').trim()}</li>
                         ))}
@@ -143,19 +143,19 @@ export function CVPreview() {
           {/* Projects */}
           {cvData.projects.length > 0 && (
             <section>
-              <h3 className="text-xl font-bold uppercase mb-6 text-slate-900 border-b border-slate-200 pb-2">Dự án tiêu biểu</h3>
-              <div className="space-y-6">
+              <h3 className="text-lg font-bold uppercase mb-4 text-slate-900 border-b border-slate-200 pb-1">Dự án tiêu biểu</h3>
+              <div className="space-y-4">
                 {cvData.projects.map((proj) => (
-                  <div key={proj.id}>
+                  <div key={proj.id} className="break-inside-avoid">
                     <div className="mb-1">
-                      <h4 className="text-lg font-bold text-slate-900">{proj.name}</h4>
+                      <h4 className="text-base font-bold text-slate-900">{proj.name}</h4>
                     </div>
-                    <div className="text-slate-700 mb-1 italic">{proj.description}</div>
-                    <div className="text-sm text-slate-600 mb-2">
+                    <div className="text-sm text-slate-700 mb-1 italic">{proj.description}</div>
+                    <div className="text-xs text-slate-600 mb-1">
                       <span className="font-semibold text-slate-800">Tech Stack:</span> {proj.technologies}
                     </div>
-                    <div className="text-slate-700 pl-4">
-                      <ul className="list-disc space-y-1">
+                    <div className="text-sm text-slate-700 pl-4">
+                      <ul className="list-disc space-y-1 marker:text-slate-400">
                         {proj.details.split('\n').map((line, i) => (
                           line.trim() && <li key={i}>{line.replace(/^- /, '').trim()}</li>
                         ))}
@@ -170,19 +170,19 @@ export function CVPreview() {
           {/* Education */}
           {cvData.education.length > 0 && (
             <section>
-              <h3 className="text-xl font-bold uppercase mb-6 text-slate-900 border-b border-slate-200 pb-2">Học vấn</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-bold uppercase mb-4 text-slate-900 border-b border-slate-200 pb-1">Học vấn</h3>
+              <div className="space-y-3">
                 {cvData.education.map((edu) => (
-                  <div key={edu.id} className="flex justify-between items-start">
+                  <div key={edu.id} className="flex justify-between items-start break-inside-avoid">
                     <div>
-                      <h4 className="text-lg font-bold text-slate-900 uppercase">{edu.institution}</h4>
-                      <div className="text-slate-700">{edu.degree}</div>
+                      <h4 className="text-base font-bold text-slate-900 uppercase">{edu.institution}</h4>
+                      <div className="text-sm text-slate-700">{edu.degree}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-slate-600 font-medium text-sm">
+                      <div className="text-slate-600 font-medium text-xs">
                         {edu.startDate} – {edu.endDate}
                       </div>
-                      {edu.gpa && <div className="text-slate-600 text-sm font-medium">GPA: {edu.gpa}</div>}
+                      {edu.gpa && <div className="text-slate-600 text-xs font-medium">GPA: {edu.gpa}</div>}
                     </div>
                   </div>
                 ))}
@@ -192,36 +192,38 @@ export function CVPreview() {
 
           {/* Certifications & Languages */}
           {(cvData.certifications.length > 0 || cvData.languages.length > 0) && (
-            <section>
-              <h3 className="text-xl font-bold uppercase mb-4 text-slate-900 border-b border-slate-200 pb-2">Chứng chỉ & Ngoại ngữ</h3>
+            <section className="break-inside-avoid">
+              <h3 className="text-lg font-bold uppercase mb-3 text-slate-900 border-b border-slate-200 pb-1">Chứng chỉ & Ngoại ngữ</h3>
               
-              {cvData.certifications.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="font-bold text-slate-900 mb-2">Chứng chỉ</h4>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-700">
-                    {cvData.certifications.map((cert) => (
-                      <li key={cert.id}>
-                        <span className="font-medium">{cert.name}</span>
-                        {cert.issuer && <span> - {cert.issuer}</span>}
-                        {cert.date && <span className="text-slate-500 text-sm"> ({cert.date})</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {cvData.certifications.length > 0 && (
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-2 text-sm">Chứng chỉ</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 marker:text-slate-400">
+                      {cvData.certifications.map((cert) => (
+                        <li key={cert.id}>
+                          <span className="font-medium">{cert.name}</span>
+                          {cert.issuer && <span> - {cert.issuer}</span>}
+                          {cert.date && <span className="text-slate-500 text-xs"> ({cert.date})</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-              {cvData.languages.length > 0 && (
-                <div>
-                  <h4 className="font-bold text-slate-900 mb-2">Ngoại ngữ</h4>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-700">
-                    {cvData.languages.map((lang, index) => (
-                      <li key={index}>
-                        <span className="font-medium">{lang.language}</span>: {lang.proficiency}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                {cvData.languages.length > 0 && (
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-2 text-sm">Ngoại ngữ</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 marker:text-slate-400">
+                      {cvData.languages.map((lang, index) => (
+                        <li key={index}>
+                          <span className="font-medium">{lang.language}</span>: {lang.proficiency}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </section>
           )}
 
