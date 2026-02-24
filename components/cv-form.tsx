@@ -14,6 +14,8 @@ import { AIReview } from "@/components/ai-review";
 import { CVImport } from "@/components/cv-import";
 import { ATSChecklist } from "@/components/ats-checklist";
 import { DataManager } from "@/components/data-manager";
+import { MobilePreview } from "@/components/mobile-preview";
+import { AITranslator } from "@/components/ai-translator";
 import { emptyCVData } from "@/types/cv";
 
 export function CVForm() {
@@ -39,7 +41,10 @@ export function CVForm() {
     <div className="space-y-8 max-w-4xl mx-auto pb-20">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">CV Builder</h2>
-        <DataManager />
+        <div className="flex gap-2">
+          <AITranslator />
+          <DataManager />
+        </div>
       </div>
 
       {/* Settings Card */}
@@ -514,6 +519,8 @@ export function CVForm() {
           Xem trước & In CV
         </Button>
       </div>
+      
+      <MobilePreview />
     </div>
   );
 }

@@ -5,7 +5,11 @@ import { useCVStore } from "@/lib/store";
 import { Phone, Mail, MapPin, Linkedin, Github, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function CVPreview() {
+interface CVPreviewProps {
+  hideToolbar?: boolean;
+}
+
+export function CVPreview({ hideToolbar = false }: CVPreviewProps) {
   const { cvData } = useCVStore();
   const themeColor = cvData.themeColor || "#2563eb";
   const [isMounted, setIsMounted] = React.useState(false);
@@ -23,20 +27,22 @@ export function CVPreview() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8 print:p-0 print:bg-white">
-      <div className="max-w-[210mm] mx-auto bg-white shadow-lg print:shadow-none print:max-w-none">
-        {/* Toolbar - Hidden when printing */}
-        <div className="flex justify-between items-center p-4 border-b print:hidden">
-          <Button variant="outline" onClick={() => window.location.href = '/'}>
-            Quay lại chỉnh sửa
-          </Button>
-          <Button onClick={handlePrint} style={{ backgroundColor: themeColor, color: 'white' }}>
-            In CV / Lưu PDF
-          </Button>
-        </div>
+    <div className={`min-h-screen bg-gray-100 ${hideToolbar ? 'p-0' : 'p-8'} print:p-0 print:bg-white`}>
+      <div className={`max-w-[210mm] mx-auto bg-white shadow-lg print:shadow-none print:max-w-none ${hideToolbar ? 'shadow-none' : ''}`}>
+        {/* Toolbar - Hidden when printing or if hideToolbar is true */}
+        {!hideToolbar && (
+          <div className="flex justify-between items-center p-4 border-b print:hidden">
+            <Button variant="outline" onClick={() => window.location.href = '/'}>
+              Quay lại chỉnh sửa
+            </Button>
+            <Button onClick={handlePrint} style={{ backgroundColor: themeColor, color: 'white' }}>
+              In CV / Lưu PDF
+            </Button>
+          </div>
+        )}
 
         {/* CV Content */}
-        <div className="p-10 md:p-12 print:p-8 space-y-6 text-slate-900 font-sans leading-relaxed">
+        <div className="p-6 md:p-12 print:p-8 space-y-6 text-slate-900 font-sans leading-relaxed">
           
           {/* Header */}
           <div className="text-center space-y-3">

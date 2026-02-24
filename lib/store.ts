@@ -228,6 +228,21 @@ export const useCVStore = create<CVStore>()(
     }),
     {
       name: 'cv-storage',
+      version: 1,
+      migrate: (persistedState: any, version) => {
+        if (version === 0) {
+          return {
+            ...persistedState,
+            cvData: {
+              ...initialCVData,
+              ...persistedState.cvData,
+              settings: persistedState.cvData.settings || initialCVData.settings,
+              sections: persistedState.cvData.sections || initialCVData.sections,
+            },
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );
