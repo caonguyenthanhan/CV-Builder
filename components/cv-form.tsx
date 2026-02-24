@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { AIReview } from "@/components/ai-review";
 import { CVImport } from "@/components/cv-import";
@@ -16,6 +23,8 @@ import { ATSChecklist } from "@/components/ats-checklist";
 import { DataManager } from "@/components/data-manager";
 import { MobilePreview } from "@/components/mobile-preview";
 import { AITranslator } from "@/components/ai-translator";
+import { SectionSorter } from "@/components/section-sorter";
+import { AIWriter } from "@/components/ai-writer";
 import { emptyCVData } from "@/types/cv";
 
 export function CVForm() {
@@ -53,16 +62,33 @@ export function CVForm() {
           <CardTitle>Cấu hình Giao diện</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label>Mẫu CV</Label>
+              <Select
+                value={cvData.settings.template || 'standard'}
+                onValueChange={(value) => updateSettings({ template: value as any })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn mẫu CV" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Cơ bản (Standard)</SelectItem>
+                  <SelectItem value="modern">Hiện đại (Modern)</SelectItem>
+                  <SelectItem value="minimalist">Tối giản (Minimalist)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label>Màu sắc chủ đạo</Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center h-10">
                 {(['blue', 'emerald', 'neutral'] as const).map((color) => (
                   <button
                     key={color}
                     onClick={() => updateSettings({ accentColor: color })}
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      cvData.settings.accentColor === color ? 'border-black ring-2 ring-offset-2 ring-black' : 'border-transparent'
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      cvData.settings.accentColor === color ? 'border-black ring-2 ring-offset-2 ring-black scale-110' : 'border-transparent hover:scale-105'
                     }`}
                     style={{ backgroundColor: color === 'blue' ? '#2563eb' : color === 'emerald' ? '#059669' : '#4b5563' }}
                     title={color}
@@ -70,31 +96,51 @@ export function CVForm() {
                 ))}
               </div>
             </div>
+
             <div className="space-y-2">
               <Label>Font chữ</Label>
-              <select 
-                className="w-full p-2 border rounded-md"
+              <Select
                 value={cvData.settings.fontFamily}
-                onChange={(e) => updateSettings({ fontFamily: e.target.value as any })}
+                onValueChange={(value) => updateSettings({ fontFamily: value as any })}
               >
-                <option value="inter">Sans-serif (Inter)</option>
-                <option value="serif">Serif (Georgia)</option>
-                <option value="mono">Monospace</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn font chữ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inter">Sans-serif (Inter)</SelectItem>
+                  <SelectItem value="serif">Serif (Georgia)</SelectItem>
+                  <SelectItem value="mono">Monospace</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
             <div className="space-y-2">
               <Label>Mật độ</Label>
-              <select 
-                className="w-full p-2 border rounded-md"
+              <Select
                 value={cvData.settings.density}
-                onChange={(e) => updateSettings({ density: e.target.value as any })}
+                onValueChange={(value) => updateSettings({ density: value as any })}
               >
-                <option value="compact">Gọn (Compact)</option>
-                <option value="normal">Bình thường</option>
-                <option value="relaxed">Thoáng (Relaxed)</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn mật độ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="compact">Gọn (Compact)</SelectItem>
+                  <SelectItem value="normal">Bình thường</SelectItem>
+                  <SelectItem value="relaxed">Thoáng (Relaxed)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Section Sorter Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sắp xếp bố cục</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SectionSorter />
         </CardContent>
       </Card>
 
@@ -202,7 +248,14 @@ export function CVForm() {
       {/* Summary */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Tóm tắt chuyên môn</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle>Tóm tắt chuyên môn</CardTitle>
+            <AIWriter 
+              currentText={cvData.summary} 
+              onApply={(text) => store.updateSummary(text)} 
+              context="Professional Summary" 
+            />
+          </div>
           <div className="flex items-center gap-2">
             <Label htmlFor="show-summary" className="text-sm font-normal text-slate-500">Hiển thị</Label>
             <Switch 
@@ -308,7 +361,14 @@ export function CVForm() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Mô tả (Mỗi dòng là một gạch đầu dòng)</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Mô tả (Mỗi dòng là một gạch đầu dòng)</Label>
+                  <AIWriter 
+                    currentText={exp.description} 
+                    onApply={(text) => store.updateExperience(exp.id, { ...exp, description: text })} 
+                    context="Job Description" 
+                  />
+                </div>
                 <Textarea
                   className="h-32"
                   value={exp.description}
@@ -363,7 +423,14 @@ export function CVForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Chi tiết (Mỗi dòng là một gạch đầu dòng)</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Chi tiết (Mỗi dòng là một gạch đầu dòng)</Label>
+                  <AIWriter 
+                    currentText={proj.details} 
+                    onApply={(text) => store.updateProject(proj.id, { ...proj, details: text })} 
+                    context="Project Details" 
+                  />
+                </div>
                 <Textarea
                   className="h-24"
                   value={proj.details}

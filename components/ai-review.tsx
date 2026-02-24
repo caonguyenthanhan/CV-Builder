@@ -31,6 +31,7 @@ export function AIReview({ cvData }: AIReviewProps) {
   const [error, setError] = useState<string | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>("");
   const [showKeyInput, setShowKeyInput] = useState(false);
+  const [jobRole, setJobRole] = useState("");
 
   useEffect(() => {
     const storedKey = localStorage.getItem("gemini_api_key");
@@ -75,6 +76,8 @@ export function AIReview({ cvData }: AIReviewProps) {
       const prompt = `
         You are an expert HR specialist and CV reviewer. Please review the following CV data and provide constructive feedback to make it ATS-friendly, professional, and impactful.
         
+        ${jobRole ? `Target Job Role: ${jobRole}\nPlease specifically evaluate the CV's compatibility with this job role and ATS requirements for it.` : ""}
+
         CV Data:
         ${JSON.stringify(cvData, null, 2)}
         
@@ -101,10 +104,16 @@ export function AIReview({ cvData }: AIReviewProps) {
         
         **Skills:**
         [Suggestions on skill organization or missing key skills for the role]
+
+        ${jobRole ? `
+        ### 🎯 Job Fit Analysis (${jobRole})
+        - [Analysis of how well the CV matches the target role]
+        - [Missing keywords for this specific role]
+        ` : ""}
       `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-latest",
+        model: "gemini-3-flash-preview",
         contents: prompt,
       });
 
@@ -225,8 +234,27 @@ export function AIReview({ cvData }: AIReviewProps) {
               </div>
             </ScrollArea>
           ) : (
-            <div className="h-full flex items-center justify-center text-slate-400">
-              Nhấn vào nút bên dưới để bắt đầu đánh giá.
+            <div className="h-full flex flex-col items-center justify-center space-y-6 p-6">
+              <div className="text-center space-y-2 max-w-md">
+                <h3 className="font-semibold text-lg text-slate-800">Sẵn sàng đánh giá CV?</h3>
+                <p className="text-sm text-slate-500">
+                  Nhập vị trí công việc bạn đang ứng tuyển để AI có thể đánh giá mức độ phù hợp và tối ưu hóa từ khóa ATS tốt hơn.
+                </p>
+              </div>
+              
+              <div className="w-full max-w-sm space-y-2">
+                <Label htmlFor="jobRole">Vị trí ứng tuyển (Tùy chọn)</Label>
+                <Input 
+                  id="jobRole" 
+                  placeholder="Ví dụ: Senior Frontend Developer, Marketing Manager..." 
+                  value={jobRole}
+                  onChange={(e) => setJobRole(e.target.value)}
+                />
+              </div>
+
+              <div className="text-xs text-slate-400 max-w-xs text-center">
+                Nếu để trống, AI sẽ đánh giá dựa trên nội dung chung của CV.
+              </div>
             </div>
           )}
         </div>

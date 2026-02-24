@@ -78,6 +78,26 @@ export function ATSChecklist({ cvData }: ATSChecklistProps) {
       passed: cvData.education.length > 0,
       message: "List your educational background.",
     },
+    {
+      id: "action_verbs",
+      label: "Action Verbs",
+      passed: cvData.experience.some(exp => 
+        /\b(managed|developed|created|led|designed|implemented|improved|increased|reduced|achieved)\b/i.test(exp.description)
+      ),
+      message: "Use strong action verbs (Managed, Developed, Led) to describe your achievements.",
+    },
+    {
+      id: "quantifiable_results",
+      label: "Quantifiable Results",
+      passed: cvData.experience.some(exp => /\d+%|\d+/.test(exp.description)),
+      message: "Include numbers and percentages to quantify your impact (e.g., 'Increased sales by 20%').",
+    },
+    {
+      id: "formatting",
+      label: "Bullet Points",
+      passed: cvData.experience.some(exp => exp.description.includes("-") || exp.description.includes("•")),
+      message: "Use bullet points for readability.",
+    },
   ];
 
   const passedChecks = checks.filter((c) => c.passed).length;

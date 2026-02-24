@@ -4,7 +4,9 @@ export interface CVData {
     accentColor: 'blue' | 'emerald' | 'neutral';
     fontFamily: 'inter' | 'serif' | 'mono';
     density: 'compact' | 'normal' | 'relaxed';
+    template: 'standard' | 'modern' | 'minimalist';
   };
+  sectionOrder: string[];
   sections: {
     summary: boolean;
     experience: boolean;
@@ -72,7 +74,9 @@ export const emptyCVData: CVData = {
     accentColor: 'blue',
     fontFamily: 'inter',
     density: 'normal',
+    template: 'standard',
   },
+  sectionOrder: ['summary', 'experience', 'projects', 'skills', 'education', 'certifications', 'languages'],
   sections: {
     summary: true,
     experience: true,
@@ -106,7 +110,9 @@ export const initialCVData: CVData = {
     accentColor: 'blue',
     fontFamily: 'inter',
     density: 'normal',
+    template: 'standard',
   },
+  sectionOrder: ['summary', 'experience', 'projects', 'skills', 'education', 'certifications', 'languages'],
   sections: {
     summary: true,
     experience: true,

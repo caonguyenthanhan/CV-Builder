@@ -28,6 +28,7 @@ interface CVStore {
   updateLanguage: (index: number, lang: CVData['languages'][0]) => void;
   updateThemeColor: (color: string) => void;
   updateSettings: (settings: Partial<CVData['settings']>) => void;
+  setSectionOrder: (order: string[]) => void;
   toggleSection: (section: keyof CVData['sections']) => void;
   reset: () => void;
 }
@@ -46,6 +47,10 @@ export const useCVStore = create<CVStore>()(
             ...state.cvData,
             settings: { ...state.cvData.settings, ...settings },
           },
+        })),
+      setSectionOrder: (order) =>
+        set((state) => ({
+          cvData: { ...state.cvData, sectionOrder: order },
         })),
       toggleSection: (section) =>
         set((state) => ({
@@ -228,16 +233,21 @@ export const useCVStore = create<CVStore>()(
     }),
     {
       name: 'cv-storage',
-      version: 1,
+      version: 2,
       migrate: (persistedState: any, version) => {
-        if (version === 0) {
+        if (version === 0 || version === 1) {
           return {
             ...persistedState,
             cvData: {
               ...initialCVData,
               ...persistedState.cvData,
-              settings: persistedState.cvData.settings || initialCVData.settings,
-              sections: persistedState.cvData.sections || initialCVData.sections,
+              settings: {
+                ...initialCVData.settings,
+                ...(persistedState.cvData?.settings || {}),
+                template: persistedState.cvData?.settings?.template || 'standard',
+              },
+              sectionOrder: persistedState.cvData?.sectionOrder || initialCVData.sectionOrder,
+              sections: persistedState.cvData?.sections || initialCVData.sections,
             },
           };
         }

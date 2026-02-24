@@ -110,6 +110,13 @@ export function CVImport() {
         Interface:
         interface CVData {
           themeColor: string;
+          settings: {
+            accentColor: 'blue' | 'emerald' | 'neutral';
+            fontFamily: 'inter' | 'serif' | 'mono';
+            density: 'compact' | 'normal' | 'relaxed';
+            template: 'standard' | 'modern' | 'minimalist';
+          };
+          sectionOrder: string[];
           personalInfo: {
             fullName: string;
             title: string;
@@ -164,7 +171,7 @@ export function CVImport() {
       parts.push({ text: prompt });
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-latest",
+        model: "gemini-3-flash-preview",
         contents: { parts },
       });
 
