@@ -5,6 +5,7 @@ import { Page, Text, View, Document, StyleSheet, Font, Link, PDFDownloadLink } f
 import { CVData } from '@/types/cv';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
+import { cvTranslations, CVLanguage } from '@/lib/translations';
 
 // Register a font that supports Vietnamese characters
 Font.register({
@@ -120,6 +121,8 @@ interface CVPDFProps {
 
 export const CVPDF = ({ data }: CVPDFProps) => {
   const { personalInfo, settings, sections, sectionOrder } = data;
+  const lang = (settings.language || 'vi') as CVLanguage;
+  const t = cvTranslations[lang] || cvTranslations.vi;
   
   // Helper to render bullet points
   const renderBulletPoints = (text: string) => {
@@ -142,7 +145,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         if (!sections.summary || !data.summary) return null;
         return (
           <View style={styles.section} key="summary">
-            <Text style={styles.sectionTitle}>Tóm tắt chuyên môn</Text>
+            <Text style={styles.sectionTitle}>{t.summary}</Text>
             <Text>{data.summary}</Text>
           </View>
         );
@@ -151,13 +154,13 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         if (!sections.experience || data.experience.length === 0) return null;
         return (
           <View style={styles.section} key="experience">
-            <Text style={styles.sectionTitle}>Kinh nghiệm làm việc</Text>
+            <Text style={styles.sectionTitle}>{t.experience}</Text>
             {data.experience.map((exp) => (
               <View key={exp.id} style={styles.experienceItem}>
                 <View style={styles.row}>
                   <Text style={styles.company}>{exp.company}</Text>
                   <Text style={styles.date}>
-                    {exp.startDate} - {exp.current ? 'Hiện tại' : exp.endDate}
+                    {exp.startDate} - {exp.current ? t.present : exp.endDate}
                   </Text>
                 </View>
                 <Text style={styles.position}>{exp.position}</Text>
@@ -171,20 +174,20 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         if (!sections.projects || data.projects.length === 0) return null;
         return (
           <View style={styles.section} key="projects">
-            <Text style={styles.sectionTitle}>Dự án nổi bật</Text>
+            <Text style={styles.sectionTitle}>{t.projects}</Text>
             {data.projects.map((proj) => (
               <View key={proj.id} style={styles.experienceItem}>
                 <View style={styles.row}>
                   <Text style={styles.company}>{proj.name}</Text>
                   {proj.link && (
                     <Link src={proj.link} style={{ color: '#2563EB', fontSize: 9 }}>
-                      Link
+                      {t.link}
                     </Link>
                   )}
                 </View>
                 <Text style={styles.position}>{proj.description}</Text>
                 <Text style={{ fontSize: 9, color: '#4B5563', marginBottom: 2 }}>
-                  Công nghệ: {proj.technologies}
+                  {t.technologies}: {proj.technologies}
                 </Text>
                 {renderBulletPoints(proj.details)}
               </View>
@@ -196,7 +199,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         if (!sections.skills || data.skills.length === 0) return null;
         return (
           <View style={styles.section} key="skills">
-            <Text style={styles.sectionTitle}>Kỹ năng</Text>
+            <Text style={styles.sectionTitle}>{t.skills}</Text>
             {data.skills.map((skill, index) => (
               <View key={index} style={{ marginBottom: 4 }}>
                 <Text style={styles.skillCategory}>{skill.category}: <Text style={{ fontFamily: 'Roboto', fontWeight: 'normal' }}>{skill.items}</Text></Text>
@@ -209,7 +212,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         if (!sections.education || data.education.length === 0) return null;
         return (
           <View style={styles.section} key="education">
-            <Text style={styles.sectionTitle}>Học vấn</Text>
+            <Text style={styles.sectionTitle}>{t.education}</Text>
             {data.education.map((edu) => (
               <View key={edu.id} style={styles.experienceItem}>
                 <View style={styles.row}>
@@ -219,7 +222,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
                   </Text>
                 </View>
                 <Text style={styles.position}>{edu.degree}</Text>
-                {edu.gpa && <Text style={{ fontSize: 9 }}>GPA: {edu.gpa}</Text>}
+                {edu.gpa && <Text style={{ fontSize: 9 }}>{t.gpa}: {edu.gpa}</Text>}
               </View>
             ))}
           </View>
@@ -229,7 +232,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         if (!sections.certifications || data.certifications.length === 0) return null;
         return (
           <View style={styles.section} key="certifications">
-            <Text style={styles.sectionTitle}>Chứng chỉ</Text>
+            <Text style={styles.sectionTitle}>{t.certifications}</Text>
             {data.certifications.map((cert) => (
               <View key={cert.id} style={styles.experienceItem}>
                 <View style={styles.row}>
@@ -246,7 +249,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         if (!sections.languages || data.languages.length === 0) return null;
         return (
           <View style={styles.section} key="languages">
-            <Text style={styles.sectionTitle}>Ngôn ngữ</Text>
+            <Text style={styles.sectionTitle}>{t.languages}</Text>
             {data.languages.map((lang, index) => (
               <View key={index} style={styles.row}>
                 <Text style={{ fontSize: 10 }}>{lang.language}</Text>

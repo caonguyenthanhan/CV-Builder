@@ -3,11 +3,14 @@
 import React from "react";
 import { useCVStore } from "@/lib/store";
 import { Phone, Mail, MapPin, Linkedin, Github, Globe } from "lucide-react";
+import { cvTranslations, CVLanguage } from "@/lib/translations";
 
 export function ModernTemplate() {
   const { cvData } = useCVStore();
   const themeColor = cvData.themeColor || "#2563eb";
-  const { sectionOrder, sections } = cvData;
+  const { sectionOrder, sections, settings } = cvData;
+  const lang = (settings.language || 'vi') as CVLanguage;
+  const t = cvTranslations[lang] || cvTranslations.vi;
 
   // Helper to check if a section is enabled
   const isEnabled = (section: string) => sections[section as keyof typeof sections];
@@ -21,7 +24,7 @@ export function ModernTemplate() {
 
         {/* Contact Info */}
         <div className="space-y-4 text-sm">
-          <h3 className="uppercase font-bold border-b border-white/30 pb-2 mb-3 tracking-wider text-white/90">Thông tin liên hệ</h3>
+          <h3 className="uppercase font-bold border-b border-white/30 pb-2 mb-3 tracking-wider text-white/90">{t.personalInfo}</h3>
           
           {cvData.personalInfo.phone && (
             <div className="flex items-center gap-2">
@@ -70,7 +73,7 @@ export function ModernTemplate() {
         {/* Skills (Sidebar) */}
         {isEnabled('skills') && cvData.skills.length > 0 && (
           <div>
-            <h3 className="uppercase font-bold border-b border-white/30 pb-2 mb-3 tracking-wider text-white/90">Kỹ năng</h3>
+            <h3 className="uppercase font-bold border-b border-white/30 pb-2 mb-3 tracking-wider text-white/90">{t.skills}</h3>
             <div className="space-y-3 text-sm">
               {cvData.skills.map((skill, index) => (
                 <div key={index}>
@@ -85,7 +88,7 @@ export function ModernTemplate() {
         {/* Languages (Sidebar) */}
         {isEnabled('languages') && cvData.languages.length > 0 && (
           <div>
-            <h3 className="uppercase font-bold border-b border-white/30 pb-2 mb-3 tracking-wider text-white/90">Ngoại ngữ</h3>
+            <h3 className="uppercase font-bold border-b border-white/30 pb-2 mb-3 tracking-wider text-white/90">{t.languages}</h3>
             <ul className="space-y-2 text-sm">
               {cvData.languages.map((lang, index) => (
                 <li key={index} className="flex justify-between">
@@ -100,7 +103,7 @@ export function ModernTemplate() {
         {/* Certifications (Sidebar) */}
         {isEnabled('certifications') && cvData.certifications.length > 0 && (
           <div>
-            <h3 className="uppercase font-bold border-b border-white/30 pb-2 mb-3 tracking-wider text-white/90">Chứng chỉ</h3>
+            <h3 className="uppercase font-bold border-b border-white/30 pb-2 mb-3 tracking-wider text-white/90">{t.certifications}</h3>
             <ul className="space-y-3 text-sm">
               {cvData.certifications.map((cert) => (
                 <li key={cert.id}>
@@ -132,7 +135,7 @@ export function ModernTemplate() {
             <section>
               <h3 className="text-lg font-bold uppercase mb-3 flex items-center gap-2" style={{ color: themeColor }}>
                 <span className="w-8 h-1 bg-current rounded-full"></span>
-                Tóm tắt
+                {t.summary}
               </h3>
               <p className="text-sm text-slate-700 leading-relaxed text-justify">
                 {cvData.summary}
@@ -145,7 +148,7 @@ export function ModernTemplate() {
             <section>
               <h3 className="text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
                 <span className="w-8 h-1 bg-current rounded-full"></span>
-                Kinh nghiệm làm việc
+                {t.experience}
               </h3>
               <div className="space-y-6">
                 {cvData.experience.map((exp) => (
@@ -154,7 +157,7 @@ export function ModernTemplate() {
                     <div className="flex justify-between items-baseline mb-1">
                       <h4 className="text-base font-bold text-slate-900">{exp.company}</h4>
                       <span className="text-slate-500 text-xs font-medium bg-slate-100 px-2 py-0.5 rounded">
-                        {exp.startDate} – {exp.endDate || "Present"}
+                        {exp.startDate} – {exp.endDate || t.present}
                       </span>
                     </div>
                     <div className="text-sm font-semibold mb-2" style={{ color: themeColor }}>{exp.position}</div>
@@ -176,7 +179,7 @@ export function ModernTemplate() {
             <section>
               <h3 className="text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
                 <span className="w-8 h-1 bg-current rounded-full"></span>
-                Dự án
+                {t.projects}
               </h3>
               <div className="space-y-5">
                 {cvData.projects.map((proj) => (
@@ -186,7 +189,7 @@ export function ModernTemplate() {
                     </div>
                     <div className="text-sm text-slate-600 mb-2 italic">{proj.description}</div>
                     <div className="text-xs text-slate-500 mb-2 bg-slate-50 p-2 rounded border border-slate-100">
-                      <span className="font-semibold text-slate-700">Tech Stack:</span> {proj.technologies}
+                      <span className="font-semibold text-slate-700">{t.technologies}:</span> {proj.technologies}
                     </div>
                     <div className="text-sm text-slate-700">
                       <ul className="list-disc pl-4 space-y-1 marker:text-slate-400">
@@ -206,7 +209,7 @@ export function ModernTemplate() {
             <section>
               <h3 className="text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
                 <span className="w-8 h-1 bg-current rounded-full"></span>
-                Học vấn
+                {t.education}
               </h3>
               <div className="space-y-4">
                 {cvData.education.map((edu) => (
@@ -219,7 +222,7 @@ export function ModernTemplate() {
                       <div className="text-slate-500 text-xs font-medium bg-slate-100 px-2 py-0.5 rounded inline-block mb-1">
                         {edu.startDate} – {edu.endDate}
                       </div>
-                      {edu.gpa && <div className="text-slate-500 text-xs">GPA: {edu.gpa}</div>}
+                      {edu.gpa && <div className="text-slate-500 text-xs">{t.gpa}: {edu.gpa}</div>}
                     </div>
                   </div>
                 ))}

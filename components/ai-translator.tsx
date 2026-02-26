@@ -95,9 +95,22 @@ export function AITranslator() {
       const translatedData = JSON.parse(jsonString);
       
       // Preserve settings and sections which might not be in the LLM output or to ensure safety
+      const langMap: Record<string, string> = {
+        'Vietnamese': 'vi',
+        'English': 'en',
+        'Japanese': 'ja',
+        'Korean': 'ko',
+        'Chinese': 'zh',
+        'French': 'fr',
+        'German': 'de'
+      };
+
       const finalData = {
         ...translatedData,
-        settings: cvData.settings,
+        settings: {
+          ...cvData.settings,
+          language: langMap[targetLang] || 'en'
+        },
         sections: cvData.sections,
         themeColor: cvData.themeColor
       };

@@ -5,6 +5,7 @@ export interface CVData {
     fontFamily: 'inter' | 'serif' | 'mono';
     density: 'compact' | 'normal' | 'relaxed';
     template: 'standard' | 'modern' | 'minimalist';
+    language: 'vi' | 'en' | 'ja' | 'ko' | 'zh' | 'fr' | 'de';
   };
   sectionOrder: string[];
   sections: {
@@ -75,6 +76,7 @@ export const emptyCVData: CVData = {
     fontFamily: 'inter',
     density: 'normal',
     template: 'standard',
+    language: 'vi',
   },
   sectionOrder: ['summary', 'experience', 'projects', 'skills', 'education', 'certifications', 'languages'],
   sections: {
@@ -111,6 +113,7 @@ export const initialCVData: CVData = {
     fontFamily: 'inter',
     density: 'normal',
     template: 'standard',
+    language: 'vi',
   },
   sectionOrder: ['summary', 'experience', 'projects', 'skills', 'education', 'certifications', 'languages'],
   sections: {

@@ -115,6 +115,27 @@ export function CVForm() {
             </div>
 
             <div className="space-y-2">
+              <Label>Ngôn ngữ CV</Label>
+              <Select
+                value={cvData.settings.language || 'vi'}
+                onValueChange={(value) => updateSettings({ language: value as any })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn ngôn ngữ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vi">Tiếng Việt</SelectItem>
+                  <SelectItem value="en">Tiếng Anh</SelectItem>
+                  <SelectItem value="ja">Tiếng Nhật</SelectItem>
+                  <SelectItem value="ko">Tiếng Hàn</SelectItem>
+                  <SelectItem value="zh">Tiếng Trung</SelectItem>
+                  <SelectItem value="fr">Tiếng Pháp</SelectItem>
+                  <SelectItem value="de">Tiếng Đức</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label>Mật độ</Label>
               <Select
                 value={cvData.settings.density}
