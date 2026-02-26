@@ -56,14 +56,14 @@ export function DataManager() {
 
   return (
     <div className="flex gap-2">
-      <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
+      <Button size="sm" onClick={handleExport} className="gap-2 bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm">
         <Download className="w-4 h-4" />
         Export JSON
       </Button>
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white border-orange-600 shadow-sm">
             <Upload className="w-4 h-4" />
             Import JSON
           </Button>

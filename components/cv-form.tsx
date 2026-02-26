@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -31,6 +31,7 @@ export function CVForm() {
   const store = useCVStore();
   const { cvData, resetCVData, updateSettings, toggleSection } = store;
   const [isMounted, setIsMounted] = React.useState(false);
+  const [isSorterOpen, setIsSorterOpen] = React.useState(false);
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -51,6 +52,7 @@ export function CVForm() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">CV Builder</h2>
         <div className="flex gap-2">
+          <CVImport />
           <AITranslator />
           <DataManager />
         </div>
@@ -157,12 +159,22 @@ export function CVForm() {
 
       {/* Section Sorter Card */}
       <Card>
-        <CardHeader>
+        <CardHeader 
+          className="flex flex-row items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors rounded-t-lg"
+          onClick={() => setIsSorterOpen(!isSorterOpen)}
+        >
           <CardTitle>Sắp xếp bố cục</CardTitle>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            {isSorterOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </CardHeader>
-        <CardContent>
-          <SectionSorter />
-        </CardContent>
+        {isSorterOpen && (
+          <CardContent className="pt-0">
+            <div className="pt-6 border-t">
+              <SectionSorter />
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       {/* Personal Info */}
@@ -174,7 +186,6 @@ export function CVForm() {
               <Trash2 className="w-4 h-4" />
             </Button>
             <ATSChecklist cvData={cvData} />
-            <CVImport />
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

@@ -134,7 +134,7 @@ export function AITranslator() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button size="sm" className="gap-2 bg-purple-600 hover:bg-purple-700 text-white border-purple-600 shadow-sm">
           <Languages className="w-4 h-4" />
           Dịch CV (AI)
         </Button>

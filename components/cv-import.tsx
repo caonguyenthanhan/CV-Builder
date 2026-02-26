@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, FileText, Loader2, AlertCircle, CheckCircle2, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CVData } from "@/types/cv";
+import mammoth from "mammoth";
 
 export function CVImport() {
   const { setCVData } = useCVStore();
@@ -60,6 +61,27 @@ export function CVImport() {
     });
   };
 
+  const extractTextFromDocx = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  };
+
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsText(file);
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("Failed to read text file"));
+        }
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const processImport = async (keyOverride?: string) => {
     setLoading(true);
     setError(null);
@@ -80,16 +102,39 @@ export function CVImport() {
       let parts: any[] = [];
 
       if (file) {
-        const base64Data = await fileToBase64(file);
-        parts.push({
-          inlineData: {
-            data: base64Data,
-            mimeType: file.type,
-          },
-        });
-        parts.push({
-          text: "Extract data from this CV document and format it as JSON.",
-        });
+        const fileType = file.name.split('.').pop()?.toLowerCase();
+        
+        if (['pdf', 'png', 'jpg', 'jpeg'].includes(fileType || '')) {
+          const base64Data = await fileToBase64(file);
+          parts.push({
+            inlineData: {
+              data: base64Data,
+              mimeType: file.type,
+            },
+          });
+          parts.push({
+            text: "Extract data from this CV document and format it as JSON.",
+          });
+        } else if (['docx', 'doc'].includes(fileType || '')) {
+          try {
+            const text = await extractTextFromDocx(file);
+            parts.push({
+              text: `Extract data from the following CV content (extracted from DOCX) and format it as JSON:\n\n${text}`,
+            });
+          } catch (e) {
+            console.error("DOCX extraction error:", e);
+            throw new Error("Không thể đọc file Word. Vui lòng thử lại hoặc chuyển sang PDF.");
+          }
+        } else if (['txt', 'md'].includes(fileType || '')) {
+          const text = await readFileAsText(file);
+          parts.push({
+            text: `Extract data from the following CV content (extracted from text file) and format it as JSON:\n\n${text}`,
+          });
+        } else {
+           // Fallback for other types, try to read as text or error out
+           // For now, let's try to read as text if it's not binary-looking, but safer to error
+           throw new Error("Định dạng file không được hỗ trợ. Vui lòng dùng PDF, Word, Ảnh hoặc Text.");
+        }
       } else if (textInput.trim()) {
         parts.push({
           text: `Extract data from the following CV text and format it as JSON:\n\n${textInput}`,
@@ -208,7 +253,7 @@ export function CVImport() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm">
           <Upload className="w-4 h-4" />
           Import CV từ AI
         </Button>
@@ -251,8 +296,13 @@ export function CVImport() {
             <TabsContent value="upload" className="space-y-4 py-4">
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="cv-file">File CV</Label>
-                <Input id="cv-file" type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileChange} />
-                <p className="text-xs text-slate-500">Hỗ trợ PDF, PNG, JPG (Max 5MB)</p>
+                <Input 
+                  id="cv-file" 
+                  type="file" 
+                  accept=".pdf,.png,.jpg,.jpeg,.docx,.doc,.txt,.md" 
+                  onChange={handleFileChange} 
+                />
+                <p className="text-xs text-slate-500">Hỗ trợ PDF, Word (DOCX), Ảnh (PNG/JPG), Text (TXT/MD) (Max 5MB)</p>
               </div>
               {file && (
                 <div className="flex items-center gap-2 text-sm text-green-600">
