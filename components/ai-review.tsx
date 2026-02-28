@@ -20,9 +20,66 @@ import { Sparkles, Loader2, ExternalLink, Lock, AlertCircle } from "lucide-react
 
 // const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
 interface AIReviewProps {
   cvData: CVData;
 }
+
+const PROMPT_MODES = [
+  {
+    id: "diagnosis",
+    title: "1. Chẩn đoán CV & 'Diệt gọn' lỗi sơ đẳng",
+    description: "Đánh giá ATS, chỉ ra 'điểm đen', từ khóa thiếu và viết lại CV chuẩn 2025-2026.",
+    needsInput: false,
+  },
+  {
+    id: "keywords",
+    title: "2. 'Cỗ máy' tối ưu từ khóa theo JD",
+    description: "Lọc từ khóa từ JD, so sánh với CV và viết lại bullet points để lồng ghép từ khóa.",
+    needsInput: true,
+    inputPlaceholder: "Nhập 3-5 chức danh mục tiêu hoặc dán Job Description (JD) vào đây...",
+  },
+  {
+    id: "achievements",
+    title: "3. Phù phép câu chữ & Định lượng hóa thành tựu",
+    description: "Viết lại các kinh nghiệm làm việc theo công thức: Động từ mạnh + Con số + Tác động.",
+    needsInput: false,
+  },
+  {
+    id: "linkedin",
+    title: "4. 'F5' Profile LinkedIn & Xây dựng thương hiệu",
+    description: "Tạo Headline, About, gợi ý Skills, ý tưởng bài đăng và Personal Branding Statement.",
+    needsInput: false,
+  },
+  {
+    id: "cover_letter",
+    title: "5. Trình tạo Thư xin việc (Cover Letter) chuẩn ATS",
+    description: "Viết Cover Letter súc tích, tác động mạnh dựa trên CV và JD.",
+    needsInput: true,
+    inputPlaceholder: "Dán Link tuyển dụng hoặc nội dung JD vào đây...",
+  },
+  {
+    id: "interview",
+    title: "6. Dự đoán câu hỏi & Khung trả lời phỏng vấn",
+    description: "Liệt kê câu hỏi phỏng vấn (STAR), gợi ý trả lời và cách xử lý 'điểm yếu'.",
+    needsInput: true,
+    inputPlaceholder: "Nhập Vị trí mục tiêu / Công ty hoặc dán JD vào đây...",
+  },
+  {
+    id: "tracking",
+    title: "7. Hệ thống quản lý & Theo dõi ứng tuyển",
+    description: "Tạo bảng theo dõi, cú pháp tìm việc, mẫu tin nhắn DM và Follow-up.",
+    needsInput: false,
+  }
+];
 
 export function AIReview({ cvData }: AIReviewProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,7 +88,8 @@ export function AIReview({ cvData }: AIReviewProps) {
   const [error, setError] = useState<string | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>("");
   const [showKeyInput, setShowKeyInput] = useState(false);
-  const [jobRole, setJobRole] = useState("");
+  const [mode, setMode] = useState<string>("diagnosis");
+  const [additionalInput, setAdditionalInput] = useState("");
 
   useEffect(() => {
     const storedKey = localStorage.getItem("gemini_api_key");
@@ -73,45 +131,131 @@ export function AIReview({ cvData }: AIReviewProps) {
 
       const ai = new GoogleGenAI({ apiKey });
       
-      const prompt = `
-        You are an expert HR specialist and CV reviewer. Please review the following CV data and provide constructive feedback to make it ATS-friendly, professional, and impactful.
-        
-        ${jobRole ? `Target Job Role/Description: ${jobRole}\nPlease specifically evaluate the CV's compatibility with this job role. Provide concrete suggestions on how to tailor the content (summary, experience, skills) to better align with this specific role.` : ""}
+      let prompt = "";
+      const cvDataString = JSON.stringify(cvData, null, 2);
 
-        CV Data:
-        ${JSON.stringify(cvData, null, 2)}
-        
-        Please provide the review in the following format (Markdown):
-        
-        ## 🎯 Overall Score: [Score]/100
-        
-        ### ✅ Strengths
-        - [Strength 1]
-        - [Strength 2]
-        - [Strength 3]
-        
-        ### ⚠️ Areas for Improvement
-        - [Weakness 1]
-        - [Weakness 2]
-        - [Weakness 3]
-        
-        ### 💡 Specific Suggestions
-        **Summary:**
-        [Critique and suggested rewrite]
-        
-        **Experience:**
-        [Select one key experience and suggest how to make it more result-oriented with metrics]
-        
-        **Skills:**
-        [Suggestions on skill organization or missing key skills for the role]
-
-        ${jobRole ? `
-        ### 🎯 Job Fit & Tailoring for Target Role
-        - **Match Analysis:** [How well the CV matches the role]
-        - **Missing Keywords:** [Keywords to add for ATS]
-        - **Tailoring Advice:** [Specific advice on what to emphasize, rephrase, or move up to appeal to recruiters for this role]
-        ` : ""}
-      `;
+      switch (mode) {
+        case "diagnosis":
+          prompt = `
+            Hãy đóng vai một Chuyên gia Tuyển dụng cao cấp (Senior Recruiter) cực kỳ khó tính, người đã từng "soi" hơn 10.000 CV trong các lĩnh vực Tech, Marketing, Tài chính, Sales và Product.
+            Dữ liệu đầu vào: Đây là toàn bộ CV của ứng viên:
+            ${cvDataString}
+            
+            Yêu cầu:
+            1. Đánh giá thẳng tay:
+            - Chấm điểm độ thân thiện với hệ thống lọc CV (ATS) trên thang điểm 10 và chỉ rõ lý do.
+            - Chỉ ra 3–5 "điểm đen" (red flags) khiến nhà tuyển dụng loại thẳng tay từ vòng gửi xe.
+            - Các phần/cách dùng từ/định dạng đang bị yếu hoặc lỗi thời.
+            - Những từ khóa (keywords) hoặc thành tựu còn thiếu cho vị trí mục tiêu.
+            - Tóm tắt đúng 1 câu: Nhà tuyển dụng đang nhìn nhận ứng viên này như thế nào qua bản CV hiện tại?
+            
+            2. Viết lại toàn bộ CV:
+            Sau khi đã sửa hết các lỗi trên.
+            - Yêu cầu: Tối ưu ATS, chèn từ khóa chuyên ngành, tập trung vào thành tựu (achievement-focused) và trình bày sạch đẹp.
+            - Áp dụng tiêu chuẩn 2025–2026: Thứ tự thời gian ngược, dùng động từ mạnh, định lượng kết quả bằng con số, bỏ phần "Mục tiêu nghề nghiệp" rườm rà (trừ khi là cấp quản lý Senior).
+            
+            Trả lời bằng định dạng Markdown rõ ràng.
+          `;
+          break;
+        case "keywords":
+          prompt = `
+            Vị trí mục tiêu / Job Description: ${additionalInput}
+            
+            Dựa trên bản CV sau:
+            ${cvDataString}
+            
+            Yêu cầu:
+            - Lọc ra top 20–30 từ khóa (Hard skills & Soft skills) xuất hiện nhiều nhất trong các tin tuyển dụng gần đây cho vị trí này.
+            - Chỉ rõ từ khóa nào đã có, từ khóa nào còn thiếu trong CV.
+            - Viết lại 4–6 gạch đầu dòng (bullet points) cho mỗi kinh nghiệm làm việc để lồng ghép các từ khóa thiếu một cách tự nhiên nhất (không nhồi nhét vô tội vạ).
+            - Gợi ý 2–3 thành tựu mới mà ứng viên nên bổ sung (nếu thực sự đã làm qua).
+            - Kết quả: Xuất ra một bản "CV tổng" (Master CV) đã tối ưu cho mọi vị trí và một bản "may đo" riêng cho JD cụ thể này.
+            
+            Trả lời bằng định dạng Markdown rõ ràng.
+          `;
+          break;
+        case "achievements":
+          const experiences = cvData.experience.map(exp => `- ${exp.company} (${exp.position}):\n${exp.description}`).join('\n\n');
+          prompt = `
+            Lấy toàn bộ các gạch đầu dòng trong phần Kinh nghiệm làm việc sau:
+            ${experiences}
+            
+            Với mỗi ý, hãy viết lại theo công thức:
+            - Bắt đầu bằng một động từ hành động mạnh mẽ (Ví dụ: Đột phá, Tái cấu trúc, Dẫn dắt...).
+            - Thêm con số cụ thể: %, $, số giờ tiết kiệm được, quy mô dự án... (nếu không nhớ chính xác, hãy đưa ra giả định hợp lý và ghi chú lại).
+            - Làm nổi bật Tác động (Impact): Ai là người hưởng lợi? Kết quả quan trọng thế nào?
+            - Giữ mỗi ý tối đa 2 dòng. Mục tiêu: Mỗi câu viết ra phải khiến nhà tuyển dụng muốn "chốt đơn" ngay lập tức thay vì chỉ liệt kê nhiệm vụ nhàm chán.
+            
+            Trả lời bằng định dạng Markdown rõ ràng.
+          `;
+          break;
+        case "linkedin":
+          prompt = `
+            Dựa trên CV sau:
+            ${cvDataString}
+            
+            Yêu cầu:
+            - Viết một Headline (Tiêu đề) cực hút (tối đa 220 ký tự) gồm: Vị trí + Giá trị cốt lõi + Bộ từ khóa chuyên môn.
+            - Viết phần About (Giới thiệu) từ 3–5 dòng: Phải gây ấn tượng trong 3 giây đầu, kể một câu chuyện ngắn về kết quả công việc và kết thúc bằng một lời kêu gọi rõ ràng.
+            - Đề xuất 5–7 kỹ năng (Skills) cần ghim lên đầu.
+            - Gợi ý 3–5 ý tưởng bài đăng gần đây để tăng tương tác và độ nhận diện (kèm tiêu đề & chủ đề).
+            - Viết một câu định vị bản thân (Personal Branding Statement) có thể dùng ở mọi nơi. Phong cách: Nam châm thu hút Headhunter — tự tin, cụ thể, ưu tiên kết quả.
+            
+            Trả lời bằng định dạng Markdown rõ ràng.
+          `;
+          break;
+        case "cover_letter":
+          prompt = `
+            Link tuyển dụng hoặc nội dung JD: ${additionalInput}
+            
+            Sử dụng CV sau để viết Cover Letter:
+            ${cvDataString}
+            
+            Yêu cầu viết một Cover Letter súc tích, tác động mạnh (tối đa 300–400 chữ):
+            - Mở đầu: Phải có điểm chạm cá nhân hóa với công ty hoặc tin tuyển dụng đó.
+            - Thân bài: 2–3 đoạn chứng minh "tôi đã làm được việc này rồi" thông qua các con số thực tế.
+            - Tại sao là công ty này? (Khát khao phù hợp văn hóa).
+            - Kết bài: Lời chào mạnh mẽ và đề nghị một buổi phỏng vấn.
+            - Tone giọng: Chuyên nghiệp nhưng ấm áp, tự tin, tuyệt đối không có cảm giác "đang cần việc gấp".
+            
+            Trả lời bằng định dạng Markdown rõ ràng.
+          `;
+          break;
+        case "interview":
+          prompt = `
+            Vị trí mục tiêu / JD: ${additionalInput}
+            
+            Dựa trên CV sau và JD trên:
+            ${cvDataString}
+            
+            Yêu cầu:
+            - Liệt kê 12 câu hỏi tình huống và kỹ thuật có khả năng cao sẽ bị hỏi (theo mô hình STAR + đặc thù ngành).
+            - Với mỗi câu: Viết câu trả lời mẫu theo khung STAR (Situation - Task - Action - Result) dựa trên kinh nghiệm thật của ứng viên trong CV.
+            - Thêm một "câu nói quyền năng" hoặc một chỉ số (metric) giúp câu trả lời trở nên khó quên.
+            - Gợi ý một câu hỏi ngược lại cho nhà tuyển dụng.
+            - Chỉ ra những "điểm yếu" trong hồ sơ mà người phỏng vấn có thể xoáy vào và cách xử lý khôn ngoan.
+            
+            Trả lời bằng định dạng Markdown rõ ràng.
+          `;
+          break;
+        case "tracking":
+          prompt = `
+            Hãy đóng vai người điều phối hành trình tìm việc cá nhân (Job-hunt Coordinator).
+            
+            Yêu cầu:
+            - Tạo một bảng theo dõi (Tracking Table) đơn giản (định dạng Markdown table) để copy vào Notion hoặc Google Sheets gồm các cột: Công ty | Vị trí | Link | Ngày ứng tuyển | Trạng thái | Hành động tiếp theo | Ghi chú.
+            - Trả cho tôi:
+              + 10 cú pháp tìm kiếm việc làm chất lượng cao trên LinkedIn/Google.
+              + 1 mẫu tin nhắn (DM) gửi trực tiếp cho Nhà tuyển dụng.
+              + 1 mẫu tin nhắn Follow-up sau 7–10 ngày ứng tuyển.
+              + 1 câu mô tả lộ trình hằng ngày để có 5–10 lượt ứng tuyển chất lượng mà không tốn quá nhiều thời gian.
+            
+            Trả lời bằng định dạng Markdown rõ ràng.
+          `;
+          break;
+        default:
+          prompt = "Invalid mode selected.";
+      }
 
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -121,7 +265,7 @@ export function AIReview({ cvData }: AIReviewProps) {
       setReview(response.text || "No feedback received.");
     } catch (err: any) {
       console.error("AI Review Error:", err);
-      let errorMessage = "An error occurred while reviewing the CV.";
+      let errorMessage = "An error occurred while generating the response.";
       if (err.message) {
         errorMessage += ` (${err.message})`;
       }
@@ -131,6 +275,8 @@ export function AIReview({ cvData }: AIReviewProps) {
     }
   };
 
+  const selectedModeObj = PROMPT_MODES.find(m => m.id === mode);
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -138,136 +284,166 @@ export function AIReview({ cvData }: AIReviewProps) {
           variant="secondary" 
           size="lg" 
           className="w-full md:w-auto bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200"
-          onClick={() => handleReview()}
+          onClick={() => {
+            if (!review) {
+              // Reset state when opening if no review exists
+              setMode("diagnosis");
+              setAdditionalInput("");
+            }
+          }}
         >
           <Sparkles className="w-4 h-4 mr-2" />
           AI Review & Đánh giá
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="w-5 h-5 text-indigo-600" />
-            Đánh giá CV bởi AI
+            Trợ lý AI Tuyển dụng
           </DialogTitle>
           <DialogDescription>
-            AI sẽ phân tích CV của bạn và đưa ra các gợi ý để cải thiện nội dung, cấu trúc và độ chuẩn ATS.
+            Chọn một trong các công cụ AI dưới đây để tối ưu hóa hành trình tìm việc của bạn.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden mt-4 border rounded-md bg-slate-50 p-4">
-          {loading ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-              <p>Đang phân tích CV của bạn...</p>
+        <div className="flex-1 overflow-hidden mt-4 border rounded-md bg-slate-50 p-4 flex flex-col md:flex-row gap-4">
+          
+          {/* Left Sidebar - Controls */}
+          <div className="w-full md:w-1/3 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 md:pr-4">
+            <div className="space-y-2">
+              <Label>Công cụ AI</Label>
+              <Select value={mode} onValueChange={setMode} disabled={loading}>
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Chọn công cụ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROMPT_MODES.map((m) => (
+                    <SelectItem key={m.id} value={m.id} className="text-sm">
+                      {m.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500 mt-1">
+                {selectedModeObj?.description}
+              </p>
             </div>
-          ) : showKeyInput ? (
-            <div className="h-full flex flex-col justify-center space-y-6 max-w-md mx-auto">
-              <div className="text-center space-y-2">
-                <div className="bg-amber-100 text-amber-800 p-3 rounded-lg flex items-start gap-3 text-sm text-left">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold">Cần Gemini API Key</p>
-                    <p>Hệ thống chưa tìm thấy API Key mặc định. Vui lòng nhập key của riêng bạn để tiếp tục.</p>
-                  </div>
-                </div>
-              </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="apiKey">Gemini API Key</Label>
-                  <Input 
-                    id="apiKey" 
-                    type="password" 
-                    placeholder="Nhập API Key của bạn..." 
-                    value={userApiKey}
-                    onChange={(e) => setUserApiKey(e.target.value)}
-                  />
-                </div>
-                
-                <Button onClick={handleSaveKey} className="w-full">
-                  Lưu Key & Bắt đầu Review
-                </Button>
-
-                <div className="text-xs text-slate-500 space-y-2 pt-2 border-t">
-                  <div className="flex items-center gap-2 text-green-600 font-medium">
-                    <Lock className="w-3 h-3" />
-                    Bảo mật & Riêng tư
-                  </div>
-                  <p>
-                    API Key của bạn chỉ được lưu trên trình duyệt (LocalStorage) của thiết bị này. 
-                    Chúng tôi <strong>tuyệt đối không</strong> thu thập hay lưu trữ key của bạn trên server.
-                  </p>
-                  <p>
-                    <a 
-                      href="https://aistudio.google.com/app/apikey" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:underline flex items-center gap-1 inline-flex"
-                    >
-                      Lấy Gemini API Key miễn phí tại Google AI Studio <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : error ? (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 p-4">
-              <div className="bg-red-50 text-red-800 p-4 rounded-lg flex flex-col items-center gap-2 max-w-md">
-                <AlertCircle className="w-8 h-8 text-red-600" />
-                <p className="font-semibold">Đã xảy ra lỗi</p>
-                <p className="text-sm">{error}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleChangeKey}>
-                  Nhập lại API Key
-                </Button>
-                <Button onClick={() => handleReview()}>
-                  Thử lại
-                </Button>
-              </div>
-            </div>
-          ) : review ? (
-            <ScrollArea className="h-full pr-4">
-              <div className="prose prose-sm max-w-none prose-indigo whitespace-pre-wrap">
-                {review}
-                {/* <ReactMarkdown>{review}</ReactMarkdown> */}
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center space-y-6 p-6">
-              <div className="text-center space-y-2 max-w-md">
-                <h3 className="font-semibold text-lg text-slate-800">Sẵn sàng đánh giá CV?</h3>
-                <p className="text-sm text-slate-500">
-                  Nhập vị trí công việc bạn đang ứng tuyển để AI có thể đánh giá mức độ phù hợp và tối ưu hóa từ khóa ATS tốt hơn.
-                </p>
-              </div>
-              
-              <div className="w-full max-w-sm space-y-2">
-                <Label htmlFor="jobRole">Vị trí ứng tuyển / Mô tả công việc (Tùy chọn)</Label>
-                <Input 
-                  id="jobRole" 
-                  placeholder="Ví dụ: Senior Frontend Developer, hoặc dán mô tả công việc..." 
-                  value={jobRole}
-                  onChange={(e) => setJobRole(e.target.value)}
+            {selectedModeObj?.needsInput && (
+              <div className="space-y-2 flex-1 flex flex-col">
+                <Label>Thông tin bổ sung</Label>
+                <Textarea 
+                  placeholder={selectedModeObj.inputPlaceholder}
+                  value={additionalInput}
+                  onChange={(e) => setAdditionalInput(e.target.value)}
+                  className="flex-1 min-h-[120px] resize-none bg-white"
+                  disabled={loading}
                 />
               </div>
-
-              <div className="text-xs text-slate-400 max-w-xs text-center">
-                Nếu để trống, AI sẽ đánh giá dựa trên nội dung chung của CV.
-              </div>
+            )}
+            
+            <div className="mt-auto pt-4">
+              {!showKeyInput && !error && (
+                <Button onClick={() => handleReview()} disabled={loading} className="w-full">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                  {loading ? "Đang xử lý..." : "Thực hiện"}
+                </Button>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Right Content - Results */}
+          <div className="w-full md:w-2/3 flex-1 overflow-hidden flex flex-col">
+            {loading ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                <p>AI đang phân tích và tạo nội dung...</p>
+              </div>
+            ) : showKeyInput ? (
+              <div className="h-full flex flex-col justify-center space-y-6 max-w-md mx-auto">
+                <div className="text-center space-y-2">
+                  <div className="bg-amber-100 text-amber-800 p-3 rounded-lg flex items-start gap-3 text-sm text-left">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold">Cần Gemini API Key</p>
+                      <p>Hệ thống chưa tìm thấy API Key mặc định. Vui lòng nhập key của riêng bạn để tiếp tục.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="apiKey">Gemini API Key</Label>
+                    <Input 
+                      id="apiKey" 
+                      type="password" 
+                      placeholder="Nhập API Key của bạn..." 
+                      value={userApiKey}
+                      onChange={(e) => setUserApiKey(e.target.value)}
+                    />
+                  </div>
+                  
+                  <Button onClick={handleSaveKey} className="w-full">
+                    Lưu Key & Bắt đầu
+                  </Button>
+
+                  <div className="text-xs text-slate-500 space-y-2 pt-2 border-t">
+                    <div className="flex items-center gap-2 text-green-600 font-medium">
+                      <Lock className="w-3 h-3" />
+                      Bảo mật & Riêng tư
+                    </div>
+                    <p>
+                      API Key của bạn chỉ được lưu trên trình duyệt (LocalStorage) của thiết bị này. 
+                    </p>
+                    <p>
+                      <a 
+                        href="https://aistudio.google.com/app/apikey" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:underline flex items-center gap-1 inline-flex"
+                      >
+                        Lấy Gemini API Key miễn phí <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-4 p-4">
+                <div className="bg-red-50 text-red-800 p-4 rounded-lg flex flex-col items-center gap-2 max-w-md">
+                  <AlertCircle className="w-8 h-8 text-red-600" />
+                  <p className="font-semibold">Đã xảy ra lỗi</p>
+                  <p className="text-sm">{error}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleChangeKey}>
+                    Nhập lại API Key
+                  </Button>
+                  <Button onClick={() => handleReview()}>
+                    Thử lại
+                  </Button>
+                </div>
+              </div>
+            ) : review ? (
+              <ScrollArea className="h-full pr-4 bg-white p-4 rounded-md border">
+                <div className="prose prose-sm max-w-none prose-indigo whitespace-pre-wrap">
+                  {review}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center space-y-4 p-6 text-slate-400">
+                <Sparkles className="w-12 h-12 opacity-20" />
+                <p className="text-center max-w-sm">
+                  Chọn một công cụ ở cột bên trái, nhập thông tin bổ sung (nếu cần) và nhấn "Thực hiện" để AI bắt đầu làm việc.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => setIsOpen(false)}>Đóng</Button>
-          {!showKeyInput && !loading && !error && (
-            <Button onClick={() => handleReview()} disabled={loading}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-              {review ? "Đánh giá lại" : "Bắt đầu đánh giá"}
-            </Button>
-          )}
         </div>
       </DialogContent>
     </Dialog>
