@@ -120,8 +120,8 @@ interface CVPDFProps {
 }
 
 export const CVPDF = ({ data }: CVPDFProps) => {
-  const { personalInfo, settings, sections, sectionOrder } = data;
-  const lang = (settings.language || 'vi') as CVLanguage;
+  const { personalInfo, settings, sections, sectionOrder = [] } = data;
+  const lang = (settings?.language || 'vi') as CVLanguage;
   const t = cvTranslations[lang] || cvTranslations.vi;
   
   // Helper to render bullet points
@@ -142,7 +142,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
   const renderSection = (sectionName: string) => {
     switch (sectionName) {
       case 'summary':
-        if (!sections.summary || !data.summary) return null;
+        if (!sections?.summary || !data.summary) return null;
         return (
           <View style={styles.section} key="summary">
             <Text style={styles.sectionTitle}>{t.summary}</Text>
@@ -151,7 +151,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         );
 
       case 'experience':
-        if (!sections.experience || data.experience.length === 0) return null;
+        if (!sections?.experience || data.experience.length === 0) return null;
         return (
           <View style={styles.section} key="experience">
             <Text style={styles.sectionTitle}>{t.experience}</Text>
@@ -171,7 +171,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         );
 
       case 'projects':
-        if (!sections.projects || data.projects.length === 0) return null;
+        if (!sections?.projects || data.projects.length === 0) return null;
         return (
           <View style={styles.section} key="projects">
             <Text style={styles.sectionTitle}>{t.projects}</Text>
@@ -196,7 +196,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         );
 
       case 'skills':
-        if (!sections.skills || data.skills.length === 0) return null;
+        if (!sections?.skills || data.skills.length === 0) return null;
         return (
           <View style={styles.section} key="skills">
             <Text style={styles.sectionTitle}>{t.skills}</Text>
@@ -209,7 +209,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         );
 
       case 'education':
-        if (!sections.education || data.education.length === 0) return null;
+        if (!sections?.education || data.education.length === 0) return null;
         return (
           <View style={styles.section} key="education">
             <Text style={styles.sectionTitle}>{t.education}</Text>
@@ -229,7 +229,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         );
 
       case 'certifications':
-        if (!sections.certifications || data.certifications.length === 0) return null;
+        if (!sections?.certifications || data.certifications.length === 0) return null;
         return (
           <View style={styles.section} key="certifications">
             <Text style={styles.sectionTitle}>{t.certifications}</Text>
@@ -246,7 +246,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
         );
 
       case 'languages':
-        if (!sections.languages || data.languages.length === 0) return null;
+        if (!sections?.languages || data.languages.length === 0) return null;
         return (
           <View style={styles.section} key="languages">
             <Text style={styles.sectionTitle}>{t.languages}</Text>

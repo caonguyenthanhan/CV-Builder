@@ -37,7 +37,24 @@ export const useCVStore = create<CVStore>()(
   persist(
     (set) => ({
       cvData: initialCVData,
-      setCVData: (data) => set({ cvData: data }),
+      setCVData: (data) => set((state) => ({
+        cvData: {
+          ...initialCVData,
+          ...data,
+          settings: {
+            ...initialCVData.settings,
+            ...(data.settings || {}),
+          },
+          sections: {
+            ...initialCVData.sections,
+            ...(data.sections || {}),
+          },
+          personalInfo: {
+            ...initialCVData.personalInfo,
+            ...(data.personalInfo || {}),
+          },
+        }
+      })),
       resetCVData: () => set({ cvData: emptyCVData }),
       updateThemeColor: (color) =>
         set((state) => ({ cvData: { ...state.cvData, themeColor: color } })),
@@ -234,6 +251,35 @@ export const useCVStore = create<CVStore>()(
     {
       name: 'cv-storage',
       version: 2,
+      merge: (persistedState: any, currentState) => {
+        return {
+          ...currentState,
+          ...persistedState,
+          cvData: {
+            ...currentState.cvData,
+            ...(persistedState.cvData || {}),
+            settings: {
+              ...currentState.cvData.settings,
+              ...(persistedState.cvData?.settings || {}),
+            },
+            sections: {
+              ...currentState.cvData.sections,
+              ...(persistedState.cvData?.sections || {}),
+            },
+            personalInfo: {
+              ...currentState.cvData.personalInfo,
+              ...(persistedState.cvData?.personalInfo || {}),
+            },
+            sectionOrder: persistedState.cvData?.sectionOrder || currentState.cvData.sectionOrder,
+            skills: persistedState.cvData?.skills || currentState.cvData.skills,
+            experience: persistedState.cvData?.experience || currentState.cvData.experience,
+            projects: persistedState.cvData?.projects || currentState.cvData.projects,
+            education: persistedState.cvData?.education || currentState.cvData.education,
+            certifications: persistedState.cvData?.certifications || currentState.cvData.certifications,
+            languages: persistedState.cvData?.languages || currentState.cvData.languages,
+          },
+        };
+      },
       migrate: (persistedState: any, version) => {
         if (version === 0 || version === 1) {
           return {

@@ -435,7 +435,7 @@ export function AIReview({ cvData }: AIReviewProps) {
               <div className="h-full flex flex-col items-center justify-center space-y-4 p-6 text-slate-400">
                 <Sparkles className="w-12 h-12 opacity-20" />
                 <p className="text-center max-w-sm">
-                  Chọn một công cụ ở cột bên trái, nhập thông tin bổ sung (nếu cần) và nhấn "Thực hiện" để AI bắt đầu làm việc.
+                  Chọn một công cụ ở cột bên trái, nhập thông tin bổ sung (nếu cần) và nhấn &quot;Thực hiện&quot; để AI bắt đầu làm việc.
                 </p>
               </div>
             )}

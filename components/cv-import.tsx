@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, FileText, Loader2, AlertCircle, CheckCircle2, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CVData } from "@/types/cv";
-import mammoth from "mammoth";
+import { extractTextFromDocxAction } from "@/app/actions/extract-docx";
 
 export function CVImport() {
   const { setCVData } = useCVStore();
@@ -63,8 +63,12 @@ export function CVImport() {
 
   const extractTextFromDocx = async (file: File): Promise<string> => {
     const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
-    return result.value;
+    const base64Data = Buffer.from(arrayBuffer).toString('base64');
+    const result = await extractTextFromDocxAction(base64Data);
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    return result.text || "";
   };
 
   const readFileAsText = (file: File): Promise<string> => {

@@ -135,7 +135,7 @@ export function SectionSorter() {
               key={id}
               id={id}
               label={getLabel(id)}
-              isEnabled={cvData.sections[id as keyof typeof cvData.sections]}
+              isEnabled={cvData.sections?.[id as keyof typeof cvData.sections] ?? true}
               onToggle={() => toggleSection(id as keyof typeof cvData.sections)}
             />
           ))}

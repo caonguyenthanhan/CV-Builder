@@ -292,7 +292,7 @@ export function CVForm() {
             <Label htmlFor="show-summary" className="text-sm font-normal text-slate-500">Hiển thị</Label>
             <Switch 
               id="show-summary"
-              checked={cvData.sections.summary}
+              checked={cvData.sections?.summary ?? true}
               onCheckedChange={() => toggleSection('summary')}
             />
           </div>

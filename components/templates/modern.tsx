@@ -8,12 +8,12 @@ import { cvTranslations, CVLanguage } from "@/lib/translations";
 export function ModernTemplate() {
   const { cvData } = useCVStore();
   const themeColor = cvData.themeColor || "#2563eb";
-  const { sectionOrder, sections, settings } = cvData;
-  const lang = (settings.language || 'vi') as CVLanguage;
+  const { sectionOrder = [], sections, settings } = cvData;
+  const lang = (settings?.language || 'vi') as CVLanguage;
   const t = cvTranslations[lang] || cvTranslations.vi;
 
   // Helper to check if a section is enabled
-  const isEnabled = (section: string) => sections[section as keyof typeof sections];
+  const isEnabled = (section: string) => sections?.[section as keyof typeof sections];
 
   return (
     <div className="flex min-h-[297mm] bg-white shadow-lg print:shadow-none max-w-[210mm] mx-auto overflow-hidden">
