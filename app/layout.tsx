@@ -14,8 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'My Google AI Studio App',
-  description: 'My Google AI Studio App',
+  title: 'CV Builder Chuẩn ATS',
+  description: 'A modern, ATS-friendly CV builder with real-time preview, AI review, and multi-language support.',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
