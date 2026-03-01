@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { CVData } from "@/types/cv";
+import { useCVStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +16,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Loader2, ExternalLink, Lock, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, ExternalLink, Lock, AlertCircle, CheckCircle2 } from "lucide-react";
 // import dynamic from "next/dynamic";
 
 // const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
@@ -82,8 +83,11 @@ const PROMPT_MODES = [
 ];
 
 export function AIReview({ cvData }: AIReviewProps) {
+  const { setCVData } = useCVStore();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
   const [review, setReview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>("");
@@ -117,6 +121,7 @@ export function AIReview({ cvData }: AIReviewProps) {
     setLoading(true);
     setReview(null);
     setError(null);
+    setApplySuccess(false);
     setShowKeyInput(false);
 
     try {
@@ -275,6 +280,171 @@ export function AIReview({ cvData }: AIReviewProps) {
     }
   };
 
+  const handleApplyToCV = async () => {
+    setIsApplying(true);
+    setApplySuccess(false);
+    setError(null);
+
+    try {
+      const envKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      const apiKey = userApiKey || envKey;
+
+      if (!apiKey) {
+        setShowKeyInput(true);
+        setIsApplying(false);
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const prompt = `
+        Tôi có một bản CV hiện tại và một bản đánh giá/góp ý từ AI.
+        Hãy cập nhật CV hiện tại dựa trên các góp ý này. 
+        Chỉ cập nhật những phần được đề cập trong góp ý (ví dụ: viết lại bullet points, thêm từ khóa, sửa lỗi). Giữ nguyên các thông tin khác.
+        
+        CV hiện tại:
+        ${JSON.stringify(cvData, null, 2)}
+        
+        Đánh giá/Góp ý từ AI:
+        ${review}
+        
+        Trả về kết quả dưới dạng JSON tuân thủ đúng cấu trúc của CV hiện tại.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              personalInfo: {
+                type: Type.OBJECT,
+                properties: {
+                  fullName: { type: Type.STRING },
+                  title: { type: Type.STRING },
+                  email: { type: Type.STRING },
+                  phone: { type: Type.STRING },
+                  location: { type: Type.STRING },
+                  linkedin: { type: Type.STRING },
+                  github: { type: Type.STRING },
+                  website: { type: Type.STRING },
+                }
+              },
+              summary: { type: Type.STRING },
+              skills: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    category: { type: Type.STRING },
+                    items: { type: Type.STRING }
+                  }
+                }
+              },
+              experience: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    company: { type: Type.STRING },
+                    position: { type: Type.STRING },
+                    startDate: { type: Type.STRING },
+                    endDate: { type: Type.STRING },
+                    current: { type: Type.BOOLEAN },
+                    description: { type: Type.STRING }
+                  }
+                }
+              },
+              projects: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    name: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    technologies: { type: Type.STRING },
+                    link: { type: Type.STRING },
+                    details: { type: Type.STRING }
+                  }
+                }
+              },
+              education: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    institution: { type: Type.STRING },
+                    degree: { type: Type.STRING },
+                    startDate: { type: Type.STRING },
+                    endDate: { type: Type.STRING },
+                    gpa: { type: Type.STRING }
+                  }
+                }
+              },
+              certifications: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    name: { type: Type.STRING },
+                    issuer: { type: Type.STRING },
+                    date: { type: Type.STRING }
+                  }
+                }
+              },
+              languages: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    language: { type: Type.STRING },
+                    proficiency: { type: Type.STRING }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      let updatedCV = {};
+      try {
+        let jsonStr = response.text || "{}";
+        // Remove markdown code blocks if present
+        jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+        jsonStr = jsonStr.trim();
+        updatedCV = JSON.parse(jsonStr);
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", parseError);
+        throw new Error("AI returned invalid or incomplete data. Please try again.");
+      }
+      
+      const finalCV = {
+        ...cvData,
+        ...updatedCV,
+        settings: cvData.settings,
+        sections: cvData.sections,
+        themeColor: cvData.themeColor,
+        sectionOrder: cvData.sectionOrder,
+      };
+      
+      setCVData(finalCV);
+      setApplySuccess(true);
+      setTimeout(() => setApplySuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Apply to CV Error:", err);
+      setError("Có lỗi xảy ra khi áp dụng vào CV. Vui lòng thử lại.");
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   const selectedModeObj = PROMPT_MODES.find(m => m.id === mode);
 
   return (
@@ -426,11 +596,46 @@ export function AIReview({ cvData }: AIReviewProps) {
                 </div>
               </div>
             ) : review ? (
-              <ScrollArea className="h-full pr-4 bg-white p-4 rounded-md border">
-                <div className="prose prose-sm max-w-none prose-indigo whitespace-pre-wrap">
-                  {review}
-                </div>
-              </ScrollArea>
+              <div className="h-full flex flex-col overflow-hidden">
+                <ScrollArea className="flex-1 bg-white p-4 rounded-md border mb-4">
+                  <div className="prose prose-sm max-w-none prose-indigo whitespace-pre-wrap">
+                    {review}
+                  </div>
+                </ScrollArea>
+                
+                {mode !== "tracking" && mode !== "interview" && (
+                  <div className="flex justify-end items-center gap-3">
+                    {applySuccess && (
+                      <span className="text-sm text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Đã áp dụng thành công!
+                      </span>
+                    )}
+                    <Button 
+                      onClick={handleApplyToCV} 
+                      disabled={isApplying || applySuccess}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      {isApplying ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Đang áp dụng...
+                        </>
+                      ) : applySuccess ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Đã áp dụng
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Áp dụng nhanh vào CV
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center space-y-4 p-6 text-slate-400">
                 <Sparkles className="w-12 h-12 opacity-20" />
