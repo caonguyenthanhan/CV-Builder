@@ -3,6 +3,7 @@
 import React from "react";
 import { useCVStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Download, Upload, FileJson } from "lucide-react";
 import {
   Dialog,
@@ -41,14 +42,14 @@ export function DataManager() {
             if (parsedData.personalInfo && parsedData.experience) {
               setCVData(parsedData);
               setIsOpen(false);
-              alert("Import thành công!");
+              toast.success("Import thành công!");
             } else {
-              alert("File JSON không hợp lệ.");
+              toast.error("File JSON không hợp lệ.");
             }
           }
         } catch (error) {
           console.error("Import Error:", error);
-          alert("Có lỗi xảy ra khi đọc file.");
+          toast.error("Có lỗi xảy ra khi đọc file.");
         }
       };
     }

@@ -1,5 +1,6 @@
 import type {Metadata} from 'next';
 import {Inter, JetBrains_Mono} from 'next/font/google';
+import { Toaster } from 'sonner';
 import './globals.css'; // Global styles
 
 const inter = Inter({
@@ -20,7 +21,10 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <Toaster position="top-right" richColors />
+      </body>
     </html>
   );
 }

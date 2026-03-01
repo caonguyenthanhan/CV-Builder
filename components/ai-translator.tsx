@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
 import { useCVStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -117,7 +118,7 @@ export function AITranslator() {
 
       setCVData(finalData);
       setIsOpen(false);
-      alert(`Đã dịch sang ${targetLang} thành công!`);
+      toast.success(`Đã dịch sang ${targetLang} thành công!`);
 
     } catch (err: any) {
       console.error("Translation Error:", err);
@@ -126,6 +127,7 @@ export function AITranslator() {
         errorMessage += ` (${err.message})`;
       }
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

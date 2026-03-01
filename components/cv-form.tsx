@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,7 @@ export function CVForm() {
   const handleClearData = () => {
     if (confirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu CV không? Hành động này không thể hoàn tác.")) {
       resetCVData();
+      toast.success("Đã xóa toàn bộ dữ liệu CV");
     }
   };
 

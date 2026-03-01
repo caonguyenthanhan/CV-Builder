@@ -5,6 +5,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { CVData } from "@/types/cv";
 import { useCVStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -436,10 +437,12 @@ export function AIReview({ cvData }: AIReviewProps) {
       
       setCVData(finalCV);
       setApplySuccess(true);
+      toast.success("Đã áp dụng thành công vào CV!");
       setTimeout(() => setApplySuccess(false), 3000);
     } catch (err: any) {
       console.error("Apply to CV Error:", err);
       setError("Có lỗi xảy ra khi áp dụng vào CV. Vui lòng thử lại.");
+      toast.error("Có lỗi xảy ra khi áp dụng vào CV.");
     } finally {
       setIsApplying(false);
     }

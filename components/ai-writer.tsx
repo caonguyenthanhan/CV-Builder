@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { GoogleGenAI } from "@google/genai";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +37,7 @@ export function AIWriter({ currentText, onApply, context }: AIWriterProps) {
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       if (!apiKey) {
-        alert("Please provide a Gemini API Key in the settings or .env file.");
+        toast.error("Please provide a Gemini API Key in the settings or .env file.");
         setIsLoading(false);
         return;
       }
@@ -57,10 +58,11 @@ export function AIWriter({ currentText, onApply, context }: AIWriterProps) {
       const text = response.text;
       if (text) {
         setGeneratedText(text.trim());
+        toast.success("Đã viết lại thành công!");
       }
     } catch (error) {
       console.error("AI Rewrite Error:", error);
-      alert("Failed to rewrite text. Please try again.");
+      toast.error("Failed to rewrite text. Please try again.");
     } finally {
       setIsLoading(false);
     }
