@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { StandardTemplate } from "@/components/templates/standard";
 import { ModernTemplate } from "@/components/templates/modern";
 import { MinimalistTemplate } from "@/components/templates/minimalist";
-import { DownloadHistory } from "@/components/download-history";
 
 const DownloadPDFButton = dynamic(
   () => import("@/components/download-pdf-button").then((mod) => mod.DownloadPDFButton),
@@ -58,7 +57,6 @@ export function CVPreview({ hideToolbar = false }: CVPreviewProps) {
               Quay lại chỉnh sửa
             </Button>
             <div className="flex gap-2">
-              <DownloadHistory />
               <DownloadPDFButton data={cvData} />
               <Button onClick={handlePrint} style={{ backgroundColor: themeColor, color: 'white' }}>
                 In (Print)
@@ -68,9 +66,7 @@ export function CVPreview({ hideToolbar = false }: CVPreviewProps) {
         )}
 
         {/* CV Content */}
-        <div id="cv-content-to-download">
-          {renderTemplate()}
-        </div>
+        {renderTemplate()}
       </div>
     </div>
   );

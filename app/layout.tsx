@@ -1,22 +1,30 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
+import type {Metadata} from 'next';
+import {Inter, JetBrains_Mono} from 'next/font/google';
+import { Toaster } from 'sonner';
+import './globals.css'; // Global styles
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+});
 
 export const metadata: Metadata = {
-  title: "CV Builder",
-  description: "Build your CV easily",
+  title: 'My Google AI Studio App',
+  description: 'My Google AI Studio App',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body suppressHydrationWarning>
+        {children}
+        <Toaster position="top-right" richColors />
+      </body>
     </html>
   );
 }

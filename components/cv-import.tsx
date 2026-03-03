@@ -39,13 +39,7 @@ export function CVImport() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        setError("File quá lớn. Vui lòng chọn file dưới 5MB.");
-        setFile(null);
-        return;
-      }
-      setFile(selectedFile);
+      setFile(e.target.files[0]);
       setError(null);
     }
   };
@@ -116,16 +110,10 @@ export function CVImport() {
         
         if (['pdf', 'png', 'jpg', 'jpeg'].includes(fileType || '')) {
           const base64Data = await fileToBase64(file);
-          let mimeType = file.type;
-          if (!mimeType) {
-            if (fileType === 'pdf') mimeType = 'application/pdf';
-            else if (fileType === 'png') mimeType = 'image/png';
-            else if (fileType === 'jpg' || fileType === 'jpeg') mimeType = 'image/jpeg';
-          }
           parts.push({
             inlineData: {
               data: base64Data,
-              mimeType: mimeType,
+              mimeType: file.type,
             },
           });
           parts.push({
@@ -234,9 +222,6 @@ export function CVImport() {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: { parts },
-        config: {
-          responseMimeType: "application/json",
-        }
       });
 
       const responseText = response.text || "";
@@ -253,9 +238,9 @@ export function CVImport() {
       setFile(null);
       setTextInput("");
       
-    } catch (err: any) {
+    } catch (err) {
       console.error("Import Error:", err);
-      setError(`Có lỗi xảy ra khi phân tích CV: ${err.message || 'Vui lòng kiểm tra lại file/nội dung hoặc API Key.'}`);
+      setError("Có lỗi xảy ra khi phân tích CV. Vui lòng kiểm tra lại file/nội dung hoặc API Key.");
     } finally {
       setLoading(false);
     }
@@ -322,11 +307,6 @@ export function CVImport() {
                   onChange={handleFileChange} 
                 />
                 <p className="text-xs text-slate-500">Hỗ trợ PDF, Word (DOCX), Ảnh (PNG/JPG), Text (TXT/MD) (Max 5MB)</p>
-                {loading && file?.name.toLowerCase().endsWith('.pdf') && (
-                  <p className="text-xs text-blue-600 font-medium mt-2 animate-pulse">
-                    Đang phân tích PDF. Quá trình này có thể mất đến 1 phút, vui lòng không đóng cửa sổ...
-                  </p>
-                )}
               </div>
               {file && (
                 <div className="flex items-center gap-2 text-sm text-green-600">

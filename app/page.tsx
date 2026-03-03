@@ -1,20 +1,15 @@
-"use client";
-
-import React from "react";
 import { CVForm } from "@/components/cv-form";
-import { CVPreview } from "@/components/cv-preview";
-import { Toaster } from "sonner";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen bg-gray-50">
-      <div className="w-1/2 p-8 overflow-y-auto h-screen border-r border-gray-200 bg-white">
-        <CVForm />
+    <main className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto mb-8 text-center">
+        <h1 className="text-3xl font-bold text-gray-900">CV Builder</h1>
+        <p className="mt-2 text-gray-600">
+          Điền thông tin của bạn để tạo CV chuẩn ATS, hiện đại và chuyên nghiệp.
+        </p>
       </div>
-      <div className="w-1/2 p-0 overflow-y-auto h-screen bg-gray-100">
-        <CVPreview />
-      </div>
-      <Toaster position="top-center" />
+      <CVForm />
     </main>
   );
 }
