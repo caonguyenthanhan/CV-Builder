@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { useCVStore } from "@/lib/store";
+import { CVData } from "@/types/cv";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -25,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Languages, Loader2, AlertCircle, Lock, ExternalLink } from "lucide-react";
 
 export function AITranslator() {
-  const { cvData, setCVData } = useCVStore();
+  const { cvData, setCVData, previousCVData, revertCVData } = useCVStore();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [targetLang, setTargetLang] = useState("English");
@@ -75,7 +76,7 @@ export function AITranslator() {
         You are a professional translator. Translate the following CV data JSON to ${targetLang}.
         Maintain the exact same JSON structure. Only translate the values of the fields, do not translate keys.
         
-        For 'personalInfo', 'summary', 'skills' (items), 'experience' (company, position, description), 'projects' (name, description, details), 'education' (institution, degree), 'certifications' (name, issuer).
+        For 'personalInfo', 'summary', 'skills' (category, items), 'experience' (company, position, startDate, endDate, description), 'projects' (name, description, technologies, details), 'education' (institution, degree, startDate, endDate, gpa), 'certifications' (name, issuer, date), 'languages' (language, proficiency).
         
         Do NOT translate proper names if they shouldn't be translated (e.g. company names usually stay the same, but job titles can be translated).
         
@@ -88,12 +89,122 @@ export function AITranslator() {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
+        config: {
+          systemInstruction: "You are a professional translator. Return ONLY valid JSON matching the exact structure of the input. Do not include markdown formatting.",
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              personalInfo: {
+                type: Type.OBJECT,
+                properties: {
+                  fullName: { type: Type.STRING },
+                  title: { type: Type.STRING },
+                  email: { type: Type.STRING },
+                  phone: { type: Type.STRING },
+                  location: { type: Type.STRING },
+                  linkedin: { type: Type.STRING },
+                  github: { type: Type.STRING },
+                  website: { type: Type.STRING },
+                }
+              },
+              summary: { type: Type.STRING },
+              skills: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    category: { type: Type.STRING },
+                    items: { type: Type.STRING }
+                  }
+                }
+              },
+              experience: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    company: { type: Type.STRING },
+                    position: { type: Type.STRING },
+                    startDate: { type: Type.STRING },
+                    endDate: { type: Type.STRING },
+                    current: { type: Type.BOOLEAN },
+                    description: { type: Type.STRING }
+                  }
+                }
+              },
+              projects: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    name: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    technologies: { type: Type.STRING },
+                    link: { type: Type.STRING },
+                    details: { type: Type.STRING }
+                  }
+                }
+              },
+              education: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    institution: { type: Type.STRING },
+                    degree: { type: Type.STRING },
+                    startDate: { type: Type.STRING },
+                    endDate: { type: Type.STRING },
+                    gpa: { type: Type.STRING }
+                  }
+                }
+              },
+              certifications: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    name: { type: Type.STRING },
+                    issuer: { type: Type.STRING },
+                    date: { type: Type.STRING }
+                  }
+                }
+              },
+              languages: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    language: { type: Type.STRING },
+                    proficiency: { type: Type.STRING }
+                  }
+                }
+              }
+            }
+          }
+        }
       });
 
-      const responseText = response.text || "";
-      const jsonString = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-      
-      const translatedData = JSON.parse(jsonString);
+      let translatedData: any = {};
+      try {
+        let jsonStr = response.text || "{}";
+        jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+        
+        try {
+          translatedData = JSON.parse(jsonStr);
+        } catch (e) {
+          console.warn("Initial JSON parse failed, attempting to repair...", e);
+          const { jsonrepair } = await import('jsonrepair');
+          translatedData = JSON.parse(jsonrepair(jsonStr));
+        }
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", parseError);
+        throw new Error("AI returned invalid or incomplete data. Please try again.");
+      }
       
       // Preserve settings and sections which might not be in the LLM output or to ensure safety
       const langMap: Record<string, string> = {
@@ -106,19 +217,29 @@ export function AITranslator() {
         'German': 'de'
       };
 
-      const finalData = {
+      const finalData: CVData = {
+        ...cvData, // Fallback to original data for missing fields
         ...translatedData,
         settings: {
           ...cvData.settings,
-          language: langMap[targetLang] || 'en'
+          language: langMap[targetLang] || 'en' as any
         },
         sections: cvData.sections,
-        themeColor: cvData.themeColor
+        themeColor: cvData.themeColor,
+        sectionOrder: cvData.sectionOrder
       };
 
       setCVData(finalData);
       setIsOpen(false);
-      toast.success(`Đã dịch sang ${targetLang} thành công!`);
+      toast.success(`Đã dịch sang ${targetLang} thành công!`, {
+        action: {
+          label: 'Hoàn tác',
+          onClick: () => {
+            revertCVData();
+            toast.success('Đã hoàn tác dịch.');
+          }
+        }
+      });
 
     } catch (err: any) {
       console.error("Translation Error:", err);

@@ -4,7 +4,9 @@ import { CVData, initialCVData, emptyCVData } from '@/types/cv';
 
 interface CVStore {
   cvData: CVData;
+  previousCVData: CVData | null;
   setCVData: (data: CVData) => void;
+  revertCVData: () => void;
   resetCVData: () => void;
   updatePersonalInfo: (info: Partial<CVData['personalInfo']>) => void;
   updateSummary: (summary: string) => void;
@@ -37,7 +39,9 @@ export const useCVStore = create<CVStore>()(
   persist(
     (set) => ({
       cvData: initialCVData,
+      previousCVData: null,
       setCVData: (data) => set((state) => ({
+        previousCVData: state.cvData,
         cvData: {
           ...initialCVData,
           ...data,
@@ -55,6 +59,12 @@ export const useCVStore = create<CVStore>()(
           },
         }
       })),
+      revertCVData: () => set((state) => {
+        if (state.previousCVData) {
+          return { cvData: state.previousCVData, previousCVData: null };
+        }
+        return state;
+      }),
       resetCVData: () => set({ cvData: emptyCVData }),
       updateThemeColor: (color) =>
         set((state) => ({ cvData: { ...state.cvData, themeColor: color } })),

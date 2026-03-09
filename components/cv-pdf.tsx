@@ -144,7 +144,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
       case 'summary':
         if (!sections?.summary || !data.summary) return null;
         return (
-          <View style={styles.section} key="summary">
+          <View style={styles.section} key="summary" wrap={false}>
             <Text style={styles.sectionTitle}>{t.summary}</Text>
             <Text>{data.summary}</Text>
           </View>
@@ -156,7 +156,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
           <View style={styles.section} key="experience">
             <Text style={styles.sectionTitle}>{t.experience}</Text>
             {data.experience.map((exp) => (
-              <View key={exp.id} style={styles.experienceItem}>
+              <View key={exp.id} style={styles.experienceItem} wrap={false}>
                 <View style={styles.row}>
                   <Text style={styles.company}>{exp.company}</Text>
                   <Text style={styles.date}>
@@ -176,7 +176,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
           <View style={styles.section} key="projects">
             <Text style={styles.sectionTitle}>{t.projects}</Text>
             {data.projects.map((proj) => (
-              <View key={proj.id} style={styles.experienceItem}>
+              <View key={proj.id} style={styles.experienceItem} wrap={false}>
                 <View style={styles.row}>
                   <Text style={styles.company}>{proj.name}</Text>
                   {proj.link && (
@@ -198,7 +198,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
       case 'skills':
         if (!sections?.skills || data.skills.length === 0) return null;
         return (
-          <View style={styles.section} key="skills">
+          <View style={styles.section} key="skills" wrap={false}>
             <Text style={styles.sectionTitle}>{t.skills}</Text>
             {data.skills.map((skill, index) => (
               <View key={index} style={{ marginBottom: 4 }}>
@@ -214,7 +214,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
           <View style={styles.section} key="education">
             <Text style={styles.sectionTitle}>{t.education}</Text>
             {data.education.map((edu) => (
-              <View key={edu.id} style={styles.experienceItem}>
+              <View key={edu.id} style={styles.experienceItem} wrap={false}>
                 <View style={styles.row}>
                   <Text style={styles.company}>{edu.institution}</Text>
                   <Text style={styles.date}>
@@ -234,7 +234,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
           <View style={styles.section} key="certifications">
             <Text style={styles.sectionTitle}>{t.certifications}</Text>
             {data.certifications.map((cert) => (
-              <View key={cert.id} style={styles.experienceItem}>
+              <View key={cert.id} style={styles.experienceItem} wrap={false}>
                 <View style={styles.row}>
                   <Text style={styles.company}>{cert.name}</Text>
                   <Text style={styles.date}>{cert.date}</Text>
@@ -248,7 +248,7 @@ export const CVPDF = ({ data }: CVPDFProps) => {
       case 'languages':
         if (!sections?.languages || data.languages.length === 0) return null;
         return (
-          <View style={styles.section} key="languages">
+          <View style={styles.section} key="languages" wrap={false}>
             <Text style={styles.sectionTitle}>{t.languages}</Text>
             {data.languages.map((lang, index) => (
               <View key={index} style={styles.row}>
@@ -288,17 +288,38 @@ export const CVPDF = ({ data }: CVPDFProps) => {
   );
 };
 
-export const PDFDownloadButtonContent = ({ data }: { data: CVData }) => (
-  <PDFDownloadLink document={<CVPDF data={data} />} fileName={`CV_${data.personalInfo.fullName.replace(/\s+/g, '_')}.pdf`}>
-      {({ blob, url, loading, error }) => (
-        <Button disabled={loading} variant="outline" size="sm">
-          {loading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-4 w-4" />
+export const PDFDownloadButtonContent = ({ data }: { data: CVData }) => {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const safeName = data.personalInfo.fullName.replace(/\s+/g, '_') || 'CV';
+  const safePosition = data.personalInfo.title.replace(/\s+/g, '_') || 'Position';
+  const fileName = `${safeName}_${safePosition}_${timestamp}.pdf`;
+
+  const handleDownload = () => {
+    const history = JSON.parse(localStorage.getItem("cv_download_history") || "[]");
+    history.push({
+      id: crypto.randomUUID(),
+      fileName: fileName,
+      timestamp: new Date().toISOString(),
+      fullName: data.personalInfo.fullName,
+      position: data.personalInfo.title,
+    });
+    localStorage.setItem("cv_download_history", JSON.stringify(history.slice(-50)));
+  };
+
+  return (
+    <div onClick={handleDownload}>
+      <PDFDownloadLink document={<CVPDF data={data} />} fileName={fileName}>
+          {({ blob, url, loading, error }) => (
+            <Button disabled={loading} variant="outline" size="sm">
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {loading ? 'Generating...' : 'Download PDF'}
+            </Button>
           )}
-          {loading ? 'Generating...' : 'Download PDF'}
-        </Button>
-      )}
-  </PDFDownloadLink>
-);
+      </PDFDownloadLink>
+    </div>
+  );
+};

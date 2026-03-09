@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { StandardTemplate } from "@/components/templates/standard";
 import { ModernTemplate } from "@/components/templates/modern";
 import { MinimalistTemplate } from "@/components/templates/minimalist";
+import { DownloadHistory } from "@/components/download-history";
 
 const DownloadPDFButton = dynamic(
   () => import("@/components/download-pdf-button").then((mod) => mod.DownloadPDFButton),
@@ -27,7 +28,26 @@ export function CVPreview({ hideToolbar = false }: CVPreviewProps) {
   }, []);
 
   const handlePrint = () => {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const safeName = cvData.personalInfo.fullName.replace(/\s+/g, '_') || 'CV';
+    const safePosition = cvData.personalInfo.title.replace(/\s+/g, '_') || 'Position';
+    const fileName = `${safeName}_${safePosition}_${timestamp}`;
+    
+    // Save to history
+    const history = JSON.parse(localStorage.getItem("cv_download_history") || "[]");
+    history.push({
+      id: crypto.randomUUID(),
+      fileName: fileName + ".pdf",
+      timestamp: new Date().toISOString(),
+      fullName: cvData.personalInfo.fullName,
+      position: cvData.personalInfo.title,
+    });
+    localStorage.setItem("cv_download_history", JSON.stringify(history.slice(-50)));
+
+    const originalTitle = document.title;
+    document.title = fileName;
     window.print();
+    document.title = originalTitle;
   };
 
   if (!isMounted) {
@@ -57,16 +77,19 @@ export function CVPreview({ hideToolbar = false }: CVPreviewProps) {
               Quay lại chỉnh sửa
             </Button>
             <div className="flex gap-2">
+              <DownloadHistory />
               <DownloadPDFButton data={cvData} />
               <Button onClick={handlePrint} style={{ backgroundColor: themeColor, color: 'white' }}>
-                In (Print)
+                In CV
               </Button>
             </div>
           </div>
         )}
 
         {/* CV Content */}
-        {renderTemplate()}
+        <div id="cv-content-to-download">
+          {renderTemplate()}
+        </div>
       </div>
     </div>
   );

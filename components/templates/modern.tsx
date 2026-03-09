@@ -132,8 +132,8 @@ export function ModernTemplate() {
         <div className="space-y-8">
           {/* Summary */}
           {isEnabled('summary') && cvData.summary && (
-            <section>
-              <h3 className="text-lg font-bold uppercase mb-3 flex items-center gap-2" style={{ color: themeColor }}>
+            <section className="break-inside-avoid">
+              <h3 className="break-after-avoid text-lg font-bold uppercase mb-3 flex items-center gap-2" style={{ color: themeColor }}>
                 <span className="w-8 h-1 bg-current rounded-full"></span>
                 {t.summary}
               </h3>
@@ -146,13 +146,13 @@ export function ModernTemplate() {
           {/* Experience */}
           {isEnabled('experience') && cvData.experience.length > 0 && (
             <section>
-              <h3 className="text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
+              <h3 className="break-after-avoid text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
                 <span className="w-8 h-1 bg-current rounded-full"></span>
                 {t.experience}
               </h3>
               <div className="space-y-6">
                 {cvData.experience.map((exp) => (
-                  <div key={exp.id} className="relative pl-4 border-l-2 border-slate-200">
+                  <div key={exp.id} className="break-inside-avoid relative pl-4 border-l-2 border-slate-200">
                     <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-white border-2" style={{ borderColor: themeColor }}></div>
                     <div className="flex justify-between items-baseline mb-1">
                       <h4 className="text-base font-bold text-slate-900">{exp.company}</h4>
@@ -164,7 +164,7 @@ export function ModernTemplate() {
                     <div className="text-sm text-slate-700">
                       <ul className="list-disc pl-4 space-y-1 marker:text-slate-400">
                         {exp.description.split('\n').map((line, i) => (
-                          line.trim() && <li key={i}>{line.replace(/^- /, '').trim()}</li>
+                          line.trim() && <li key={i}>{line.replace(/^[-•*]\s*/, '').trim()}</li>
                         ))}
                       </ul>
                     </div>
@@ -177,13 +177,13 @@ export function ModernTemplate() {
           {/* Projects */}
           {isEnabled('projects') && cvData.projects.length > 0 && (
             <section>
-              <h3 className="text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
+              <h3 className="break-after-avoid text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
                 <span className="w-8 h-1 bg-current rounded-full"></span>
                 {t.projects}
               </h3>
               <div className="space-y-5">
                 {cvData.projects.map((proj) => (
-                  <div key={proj.id}>
+                  <div key={proj.id} className="break-inside-avoid">
                     <div className="flex justify-between items-baseline mb-1">
                       <h4 className="text-base font-bold text-slate-900">{proj.name}</h4>
                     </div>
@@ -194,7 +194,7 @@ export function ModernTemplate() {
                     <div className="text-sm text-slate-700">
                       <ul className="list-disc pl-4 space-y-1 marker:text-slate-400">
                         {proj.details.split('\n').map((line, i) => (
-                          line.trim() && <li key={i}>{line.replace(/^- /, '').trim()}</li>
+                          line.trim() && <li key={i}>{line.replace(/^[-•*]\s*/, '').trim()}</li>
                         ))}
                       </ul>
                     </div>
@@ -207,13 +207,13 @@ export function ModernTemplate() {
           {/* Education */}
           {isEnabled('education') && cvData.education.length > 0 && (
             <section>
-              <h3 className="text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
+              <h3 className="break-after-avoid text-lg font-bold uppercase mb-4 flex items-center gap-2" style={{ color: themeColor }}>
                 <span className="w-8 h-1 bg-current rounded-full"></span>
                 {t.education}
               </h3>
               <div className="space-y-4">
                 {cvData.education.map((edu) => (
-                  <div key={edu.id} className="flex justify-between items-start">
+                  <div key={edu.id} className="break-inside-avoid flex justify-between items-start">
                     <div>
                       <h4 className="text-base font-bold text-slate-900">{edu.institution}</h4>
                       <div className="text-sm text-slate-700">{edu.degree}</div>

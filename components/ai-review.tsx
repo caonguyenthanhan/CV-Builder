@@ -84,7 +84,7 @@ const PROMPT_MODES = [
 ];
 
 export function AIReview({ cvData }: AIReviewProps) {
-  const { setCVData } = useCVStore();
+  const { setCVData, revertCVData } = useCVStore();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -266,6 +266,9 @@ export function AIReview({ cvData }: AIReviewProps) {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
+        config: {
+          systemInstruction: "You are a professional CV reviewer. Be concise, direct, and do not repeat yourself.",
+        }
       });
 
       setReview(response.text || "No feedback received.");
@@ -299,23 +302,31 @@ export function AIReview({ cvData }: AIReviewProps) {
       const ai = new GoogleGenAI({ apiKey });
       
       const prompt = `
-        Tôi có một bản CV hiện tại và một bản đánh giá/góp ý từ AI.
-        Hãy cập nhật CV hiện tại dựa trên các góp ý này. 
-        Chỉ cập nhật những phần được đề cập trong góp ý (ví dụ: viết lại bullet points, thêm từ khóa, sửa lỗi). Giữ nguyên các thông tin khác.
+        Bạn là một hệ thống tự động cập nhật CV.
+        Nhiệm vụ của bạn là lấy "CV hiện tại" và áp dụng các thay đổi được đề xuất trong "Đánh giá/Góp ý từ AI" để tạo ra một bản CV mới.
+        
+        QUY TẮC QUAN TRỌNG:
+        1. KHÔNG ĐƯỢC gom toàn bộ nội dung góp ý vào trường "summary" (Tóm tắt chuyên môn).
+        2. Phân tích kỹ góp ý và cập nhật ĐÚNG vị trí:
+           - Nếu góp ý sửa kinh nghiệm làm việc -> Cập nhật vào trường "description" của từng mục tương ứng trong mảng "experience".
+           - Nếu góp ý thêm/sửa kỹ năng -> Cập nhật vào mảng "skills".
+           - Nếu góp ý sửa tóm tắt/mục tiêu -> Cập nhật vào trường "summary".
+           - Nếu góp ý sửa thông tin cá nhân -> Cập nhật vào "personalInfo".
+        3. Giữ nguyên các thông tin không được nhắc đến trong góp ý.
+        4. Trả về kết quả là một đối tượng JSON hoàn chỉnh, tuân thủ đúng cấu trúc của CV hiện tại.
         
         CV hiện tại:
-        ${JSON.stringify(cvData, null, 2)}
+        ${JSON.stringify(cvData)}
         
         Đánh giá/Góp ý từ AI:
         ${review}
-        
-        Trả về kết quả dưới dạng JSON tuân thủ đúng cấu trúc của CV hiện tại.
       `;
 
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
+          systemInstruction: "You are a strict data transformation assistant. Your job is to update a JSON CV object based on review notes. You MUST map changes to their correct fields (e.g., job bullet points go into experience.description, skills go into skills array). NEVER dump the entire review text into the summary field. Return ONLY valid JSON.",
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -420,7 +431,14 @@ export function AIReview({ cvData }: AIReviewProps) {
         // Remove markdown code blocks if present
         jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/\s*```$/, "");
         jsonStr = jsonStr.trim();
-        updatedCV = JSON.parse(jsonStr);
+        
+        try {
+          updatedCV = JSON.parse(jsonStr);
+        } catch (e) {
+          console.warn("Initial JSON parse failed, attempting to repair...", e);
+          const { jsonrepair } = await import('jsonrepair');
+          updatedCV = JSON.parse(jsonrepair(jsonStr));
+        }
       } catch (parseError) {
         console.error("Failed to parse JSON response:", parseError);
         throw new Error("AI returned invalid or incomplete data. Please try again.");
@@ -437,7 +455,16 @@ export function AIReview({ cvData }: AIReviewProps) {
       
       setCVData(finalCV);
       setApplySuccess(true);
-      toast.success("Đã áp dụng thành công vào CV!");
+      toast.success("Đã áp dụng thành công vào CV!", {
+        action: {
+          label: 'Hoàn tác',
+          onClick: () => {
+            revertCVData();
+            toast.success('Đã hoàn tác áp dụng CV.');
+            setApplySuccess(false);
+          }
+        }
+      });
       setTimeout(() => setApplySuccess(false), 3000);
     } catch (err: any) {
       console.error("Apply to CV Error:", err);

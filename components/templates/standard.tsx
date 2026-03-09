@@ -19,7 +19,7 @@ export function StandardTemplate() {
       case 'summary':
         return cvData.summary && (
           <section key="summary" className="mb-6">
-            <h3 className="text-lg font-bold uppercase mb-2 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.summary}</h3>
+            <h3 className="break-after-avoid text-lg font-bold uppercase mb-2 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.summary}</h3>
             <p className="text-sm text-slate-700 whitespace-pre-line text-justify leading-relaxed">
               {cvData.summary}
             </p>
@@ -28,7 +28,7 @@ export function StandardTemplate() {
       case 'skills':
         return cvData.skills.length > 0 && (
           <section key="skills" className="mb-6">
-            <h3 className="text-lg font-bold uppercase mb-3 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.skills}</h3>
+            <h3 className="break-after-avoid text-lg font-bold uppercase mb-3 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.skills}</h3>
             <div className="space-y-2 text-sm">
               {cvData.skills.map((skill, index) => (
                 <div key={index} className="grid grid-cols-[140px_1fr] gap-2">
@@ -42,7 +42,7 @@ export function StandardTemplate() {
       case 'experience':
         return cvData.experience.length > 0 && (
           <section key="experience" className="mb-6">
-            <h3 className="text-lg font-bold uppercase mb-4 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.experience}</h3>
+            <h3 className="break-after-avoid text-lg font-bold uppercase mb-4 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.experience}</h3>
             <div className="space-y-6">
               {cvData.experience.map((exp) => (
                 <div key={exp.id} className="break-inside-avoid">
@@ -56,7 +56,7 @@ export function StandardTemplate() {
                   <div className="text-sm text-slate-700 pl-4">
                     <ul className="list-disc space-y-1 marker:text-slate-400">
                       {exp.description.split('\n').map((line, i) => (
-                        line.trim() && <li key={i}>{line.replace(/^- /, '').trim()}</li>
+                        line.trim() && <li key={i}>{line.replace(/^[-•*]\s*/, '').trim()}</li>
                       ))}
                     </ul>
                   </div>
@@ -68,7 +68,7 @@ export function StandardTemplate() {
       case 'projects':
         return cvData.projects.length > 0 && (
           <section key="projects" className="mb-6">
-            <h3 className="text-lg font-bold uppercase mb-4 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.projects}</h3>
+            <h3 className="break-after-avoid text-lg font-bold uppercase mb-4 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.projects}</h3>
             <div className="space-y-4">
               {cvData.projects.map((proj) => (
                 <div key={proj.id} className="break-inside-avoid">
@@ -82,7 +82,7 @@ export function StandardTemplate() {
                   <div className="text-sm text-slate-700 pl-4">
                     <ul className="list-disc space-y-1 marker:text-slate-400">
                       {proj.details.split('\n').map((line, i) => (
-                        line.trim() && <li key={i}>{line.replace(/^- /, '').trim()}</li>
+                        line.trim() && <li key={i}>{line.replace(/^[-•*]\s*/, '').trim()}</li>
                       ))}
                     </ul>
                   </div>
@@ -94,7 +94,7 @@ export function StandardTemplate() {
       case 'education':
         return cvData.education.length > 0 && (
           <section key="education" className="mb-6">
-            <h3 className="text-lg font-bold uppercase mb-4 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.education}</h3>
+            <h3 className="break-after-avoid text-lg font-bold uppercase mb-4 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.education}</h3>
             <div className="space-y-3">
               {cvData.education.map((edu) => (
                 <div key={edu.id} className="flex justify-between items-start break-inside-avoid">
@@ -116,7 +116,7 @@ export function StandardTemplate() {
       case 'certifications':
         return cvData.certifications.length > 0 && (
           <section key="certifications" className="mb-6 break-inside-avoid">
-            <h3 className="text-lg font-bold uppercase mb-3 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.certifications}</h3>
+            <h3 className="break-after-avoid text-lg font-bold uppercase mb-3 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.certifications}</h3>
             <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 marker:text-slate-400">
               {cvData.certifications.map((cert) => (
                 <li key={cert.id}>
@@ -131,7 +131,7 @@ export function StandardTemplate() {
       case 'languages':
         return cvData.languages.length > 0 && (
           <section key="languages" className="mb-6 break-inside-avoid">
-            <h3 className="text-lg font-bold uppercase mb-3 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.languages}</h3>
+            <h3 className="break-after-avoid text-lg font-bold uppercase mb-3 border-b pb-1" style={{ color: themeColor, borderColor: themeColor }}>{t.languages}</h3>
             <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 marker:text-slate-400">
               {cvData.languages.map((lang, index) => (
                 <li key={index}>

@@ -39,7 +39,13 @@ export function CVImport() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setError("File quá lớn. Vui lòng chọn file dưới 5MB.");
+        setFile(null);
+        return;
+      }
+      setFile(selectedFile);
       setError(null);
     }
   };
@@ -110,10 +116,16 @@ export function CVImport() {
         
         if (['pdf', 'png', 'jpg', 'jpeg'].includes(fileType || '')) {
           const base64Data = await fileToBase64(file);
+          let mimeType = file.type;
+          if (!mimeType) {
+            if (fileType === 'pdf') mimeType = 'application/pdf';
+            else if (fileType === 'png') mimeType = 'image/png';
+            else if (fileType === 'jpg' || fileType === 'jpeg') mimeType = 'image/jpeg';
+          }
           parts.push({
             inlineData: {
               data: base64Data,
-              mimeType: file.type,
+              mimeType: mimeType,
             },
           });
           parts.push({
@@ -222,13 +234,24 @@ export function CVImport() {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: { parts },
+        config: {
+          systemInstruction: "You are a data extraction assistant. Return ONLY valid JSON. Do not include markdown formatting. Be concise and do not repeat yourself.",
+          responseMimeType: "application/json",
+        }
       });
 
       const responseText = response.text || "";
       // Clean up markdown code blocks if present
       const jsonString = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
       
-      const parsedData = JSON.parse(jsonString);
+      let parsedData;
+      try {
+        parsedData = JSON.parse(jsonString);
+      } catch (e) {
+        console.warn("Initial JSON parse failed, attempting to repair...", e);
+        const { jsonrepair } = await import('jsonrepair');
+        parsedData = JSON.parse(jsonrepair(jsonString));
+      }
       
       // Basic validation/sanitization could go here
       
@@ -238,9 +261,9 @@ export function CVImport() {
       setFile(null);
       setTextInput("");
       
-    } catch (err) {
+    } catch (err: any) {
       console.error("Import Error:", err);
-      setError("Có lỗi xảy ra khi phân tích CV. Vui lòng kiểm tra lại file/nội dung hoặc API Key.");
+      setError(`Có lỗi xảy ra khi phân tích CV: ${err.message || 'Vui lòng kiểm tra lại file/nội dung hoặc API Key.'}`);
     } finally {
       setLoading(false);
     }
@@ -259,7 +282,7 @@ export function CVImport() {
       <DialogTrigger asChild>
         <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm">
           <Upload className="w-4 h-4" />
-          Import CV từ AI
+          Nhập CV từ AI
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
@@ -307,6 +330,11 @@ export function CVImport() {
                   onChange={handleFileChange} 
                 />
                 <p className="text-xs text-slate-500">Hỗ trợ PDF, Word (DOCX), Ảnh (PNG/JPG), Text (TXT/MD) (Max 5MB)</p>
+                {loading && file?.name.toLowerCase().endsWith('.pdf') && (
+                  <p className="text-xs text-blue-600 font-medium mt-2 animate-pulse">
+                    Đang phân tích PDF. Quá trình này có thể mất đến 1 phút, vui lòng không đóng cửa sổ...
+                  </p>
+                )}
               </div>
               {file && (
                 <div className="flex items-center gap-2 text-sm text-green-600">
