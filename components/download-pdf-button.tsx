@@ -9,6 +9,105 @@ interface DownloadPDFButtonProps {
   data: CVData;
 }
 
+const UNSUPPORTED_COLOR_FN_RE = /\b(?:oklab|oklch|lab|lch|color|color-mix)\(/i;
+
+const COLOR_CSS_PROPERTIES = [
+  'color',
+  'background-color',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'outline-color',
+  'text-decoration-color',
+  'column-rule-color',
+  'caret-color',
+  'fill',
+  'stroke',
+  'box-shadow',
+  'text-shadow',
+  'background-image',
+] as const;
+
+/**
+ * Converts modern CSS color functions (oklab, oklch, lab, lch, color, color-mix)
+ * to sRGB rgb()/rgba() values on the cloned document so html2canvas can parse them.
+ */
+function normalizeUnsupportedColors(clonedDoc: Document) {
+  const view = clonedDoc.defaultView || window;
+  const canvas = clonedDoc.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return;
+
+  const toRgba = (colorExpr: string): string => {
+    ctx.fillStyle = '#010203';
+    ctx.fillStyle = colorExpr;
+    // If browser couldn't parse it, fillStyle stays '#010203'
+    if (ctx.fillStyle === '#010203' && colorExpr.trim().toLowerCase() !== '#010203') {
+      return colorExpr;
+    }
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillRect(0, 0, 1, 1);
+    const pixel = ctx.getImageData(0, 0, 1, 1).data;
+    const r = pixel[0];
+    const g = pixel[1];
+    const b = pixel[2];
+    const a = pixel[3];
+    if (a === 255) {
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+    return `rgba(${r}, ${g}, ${b}, ${Number((a / 255).toFixed(3))})`;
+  };
+
+  const replaceColorFunctions = (value: string): string => {
+    if (!UNSUPPORTED_COLOR_FN_RE.test(value)) return value;
+
+    let result = '';
+    let i = 0;
+    while (i < value.length) {
+      const slice = value.slice(i);
+      const match = slice.match(/^(oklab|oklch|lab|lch|color-mix|color)\(/i);
+      if (match && (i === 0 || !/[a-z0-9_-]/i.test(value[i - 1]))) {
+        let depth = 0;
+        let end = i;
+        for (; end < value.length; end++) {
+          if (value[end] === '(') depth++;
+          else if (value[end] === ')') {
+            depth--;
+            if (depth === 0) {
+              end++;
+              break;
+            }
+          }
+        }
+        const expr = value.slice(i, end);
+        result += toRgba(expr);
+        i = end;
+      } else {
+        result += value[i];
+        i++;
+      }
+    }
+    return result;
+  };
+
+  const elements = clonedDoc.querySelectorAll<HTMLElement | SVGElement>('*');
+  elements.forEach((el) => {
+    const computed = view.getComputedStyle(el);
+    for (const prop of COLOR_CSS_PROPERTIES) {
+      const val = computed.getPropertyValue(prop);
+      if (val && UNSUPPORTED_COLOR_FN_RE.test(val)) {
+        const normalized = replaceColorFunctions(val);
+        if (normalized !== val) {
+          el.style.setProperty(prop, normalized, 'important');
+        }
+      }
+    }
+  });
+}
+
 export function DownloadPDFButton({ data }: DownloadPDFButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -40,7 +139,6 @@ export function DownloadPDFButton({ data }: DownloadPDFButtonProps) {
       const element = document.getElementById('cv-content-to-download');
       if (!element) {
         console.error('CV content element not found');
-        setIsGenerating(false);
         return;
       }
 
@@ -50,42 +148,52 @@ export function DownloadPDFButton({ data }: DownloadPDFButtonProps) {
       element.style.width = '210mm';
       element.style.maxWidth = '210mm';
 
-      const fileName = getFileName();
-      
-      const opt = {
-        margin:       0,
-        filename:     fileName,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 794 }, // 794px is approx 210mm at 96dpi
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
-      };
+      try {
+        const fileName = getFileName();
 
-      await html2pdf().set(opt).from(element).save();
+        const opt = {
+          margin:       0,
+          filename:     fileName,
+          image:        { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas:  {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            windowWidth: 794, // 794px is approx 210mm at 96dpi
+            onclone: (clonedDoc: Document) => {
+              normalizeUnsupportedColors(clonedDoc);
+            },
+          },
+          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+        };
 
-      // Restore original styles
-      element.style.width = originalWidth;
-      element.style.maxWidth = originalMaxWidth;
+        await html2pdf().set(opt).from(element).save();
 
-      // Save to history
-      const newRecord = {
-        id: crypto.randomUUID(),
-        fileName,
-        timestamp: new Date().toISOString(),
-        fullName: data.personalInfo.fullName || 'Unknown',
-        position: data.personalInfo.title || 'Unknown',
-      };
+        // Save to history
+        const newRecord = {
+          id: crypto.randomUUID(),
+          fileName,
+          timestamp: new Date().toISOString(),
+          fullName: data.personalInfo.fullName || 'Unknown',
+          position: data.personalInfo.title || 'Unknown',
+        };
 
-      const storedHistory = localStorage.getItem("cv_download_history");
-      let history = [];
-      if (storedHistory) {
-        try {
-          history = JSON.parse(storedHistory);
-        } catch (e) {
-          console.error("Failed to parse download history", e);
+        const storedHistory = localStorage.getItem("cv_download_history");
+        let history = [];
+        if (storedHistory) {
+          try {
+            history = JSON.parse(storedHistory);
+          } catch (e) {
+            console.error("Failed to parse download history", e);
+          }
         }
+        history.push(newRecord);
+        localStorage.setItem("cv_download_history", JSON.stringify(history));
+      } finally {
+        // Always restore original styles even if PDF generation fails
+        element.style.width = originalWidth;
+        element.style.maxWidth = originalMaxWidth;
       }
-      history.push(newRecord);
-      localStorage.setItem("cv_download_history", JSON.stringify(history));
       
     } catch (error) {
       console.error('Error generating PDF:', error);
