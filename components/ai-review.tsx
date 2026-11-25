@@ -4,6 +4,13 @@ import React, { useState, useEffect } from "react";
 import { GoogleGenAI, Type } from "@google/genai";
 import { CVData } from "@/types/cv";
 import { useCVStore } from "@/lib/store";
+import {
+  ATSReviewResult,
+  ATS_REVIEW_RESPONSE_SCHEMA,
+  ATS_REVIEW_SYSTEM_INSTRUCTION,
+  buildATSReviewPrompt,
+} from "@/lib/ai-review-rubric";
+import { ATSReviewResultView } from "@/components/ats-review-result";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -36,6 +43,13 @@ interface AIReviewProps {
 }
 
 const PROMPT_MODES = [
+  {
+    id: "ats_rubric",
+    title: "0. Chấm điểm ATS & Tối ưu X-Y-Z (Rubric 100đ)",
+    description: "Chấm điểm theo 4 tiêu chí ATS (20/30/25/25), soi từng dòng CV, gợi ý viết lại X-Y-Z và checklist ứng tuyển.",
+    needsInput: true,
+    inputPlaceholder: "Dán Job Description (JD) vào đây (tùy chọn — bỏ trống nếu chấm theo định hướng chung)...",
+  },
   {
     id: "diagnosis",
     title: "1. Chẩn đoán CV & 'Diệt gọn' lỗi sơ đẳng",
@@ -90,10 +104,11 @@ export function AIReview({ cvData }: AIReviewProps) {
   const [isApplying, setIsApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [review, setReview] = useState<string | null>(null);
+  const [structuredReview, setStructuredReview] = useState<ATSReviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>("");
   const [showKeyInput, setShowKeyInput] = useState(false);
-  const [mode, setMode] = useState<string>("diagnosis");
+  const [mode, setMode] = useState<string>("ats_rubric");
   const [additionalInput, setAdditionalInput] = useState("");
 
   useEffect(() => {
@@ -116,11 +131,13 @@ export function AIReview({ cvData }: AIReviewProps) {
     setShowKeyInput(true);
     setError(null);
     setReview(null);
+    setStructuredReview(null);
   };
 
   const handleReview = async (keyOverride?: string) => {
     setLoading(true);
     setReview(null);
+    setStructuredReview(null);
     setError(null);
     setApplySuccess(false);
     setShowKeyInput(false);
@@ -136,7 +153,26 @@ export function AIReview({ cvData }: AIReviewProps) {
       }
 
       const ai = new GoogleGenAI({ apiKey });
-      
+
+      if (mode === "ats_rubric") {
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: buildATSReviewPrompt(cvData, additionalInput),
+          config: {
+            systemInstruction: ATS_REVIEW_SYSTEM_INSTRUCTION,
+            responseMimeType: "application/json",
+            responseSchema: ATS_REVIEW_RESPONSE_SCHEMA,
+          },
+        });
+
+        if (!response.text) {
+          throw new Error("Không nhận được dữ liệu JSON từ AI.");
+        }
+        const parsed = JSON.parse(response.text) as ATSReviewResult;
+        setStructuredReview(parsed);
+        return;
+      }
+
       let prompt = "";
       const cvDataString = JSON.stringify(cvData, null, 2);
 
@@ -319,7 +355,10 @@ export function AIReview({ cvData }: AIReviewProps) {
         ${JSON.stringify(cvData)}
         
         Đánh giá/Góp ý từ AI:
-        ${review}
+        ${structuredReview ? JSON.stringify({
+          line_by_line_feedback: structuredReview.line_by_line_feedback,
+          missing_keywords_or_skills: structuredReview.missing_keywords_or_skills,
+        }, null, 2) : review}
       `;
 
       const response = await ai.models.generateContent({
@@ -625,12 +664,16 @@ export function AIReview({ cvData }: AIReviewProps) {
                   </Button>
                 </div>
               </div>
-            ) : review ? (
+            ) : (structuredReview || review) ? (
               <div className="h-full flex flex-col overflow-hidden">
                 <ScrollArea className="flex-1 bg-white p-4 rounded-md border mb-4">
-                  <div className="prose prose-sm max-w-none prose-indigo whitespace-pre-wrap">
-                    {review}
-                  </div>
+                  {structuredReview ? (
+                    <ATSReviewResultView result={structuredReview} />
+                  ) : (
+                    <div className="prose prose-sm max-w-none prose-indigo whitespace-pre-wrap">
+                      {review}
+                    </div>
+                  )}
                 </ScrollArea>
                 
                 {mode !== "tracking" && mode !== "interview" && (
