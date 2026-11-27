@@ -4,108 +4,78 @@ import React, { useState } from 'react';
 import { CVData } from '@/types/cv';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DownloadPDFButtonProps {
   data: CVData;
 }
 
-const UNSUPPORTED_COLOR_FN_RE = /\b(?:oklab|oklch|lab|lch|color|color-mix)\(/i;
-
-const COLOR_CSS_PROPERTIES = [
-  'color',
-  'background-color',
-  'border-top-color',
-  'border-right-color',
-  'border-bottom-color',
-  'border-left-color',
-  'outline-color',
-  'text-decoration-color',
-  'column-rule-color',
-  'caret-color',
-  'fill',
-  'stroke',
-  'box-shadow',
-  'text-shadow',
-  'background-image',
-] as const;
+interface BlockRange {
+  top: number;
+  bottom: number;
+  isHeading: boolean;
+}
 
 /**
- * Converts modern CSS color functions (oklab, oklch, lab, lch, color, color-mix)
- * to sRGB rgb()/rgba() values on the cloned document so html2canvas can parse them.
+ * Collects atomic element vertical ranges (in canvas pixels) so page breaks
+ * avoid slicing through text lines, list items, cards, or leaving orphan headings.
  */
-function normalizeUnsupportedColors(clonedDoc: Document) {
-  const view = clonedDoc.defaultView || window;
-  const canvas = clonedDoc.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return;
+function collectAtomicBlocks(root: HTMLElement, scale: number): BlockRange[] {
+  const rootTop = root.getBoundingClientRect().top;
+  const nodes = root.querySelectorAll<HTMLElement>(
+    'h1, h2, h3, h4, p, li, .break-inside-avoid'
+  );
+  const blocks: BlockRange[] = [];
 
-  const toRgba = (colorExpr: string): string => {
-    ctx.fillStyle = '#010203';
-    ctx.fillStyle = colorExpr;
-    // If browser couldn't parse it, fillStyle stays '#010203'
-    if (ctx.fillStyle === '#010203' && colorExpr.trim().toLowerCase() !== '#010203') {
-      return colorExpr;
-    }
-    ctx.clearRect(0, 0, 1, 1);
-    ctx.fillRect(0, 0, 1, 1);
-    const pixel = ctx.getImageData(0, 0, 1, 1).data;
-    const r = pixel[0];
-    const g = pixel[1];
-    const b = pixel[2];
-    const a = pixel[3];
-    if (a === 255) {
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-    return `rgba(${r}, ${g}, ${b}, ${Number((a / 255).toFixed(3))})`;
-  };
-
-  const replaceColorFunctions = (value: string): string => {
-    if (!UNSUPPORTED_COLOR_FN_RE.test(value)) return value;
-
-    let result = '';
-    let i = 0;
-    while (i < value.length) {
-      const slice = value.slice(i);
-      const match = slice.match(/^(oklab|oklch|lab|lch|color-mix|color)\(/i);
-      if (match && (i === 0 || !/[a-z0-9_-]/i.test(value[i - 1]))) {
-        let depth = 0;
-        let end = i;
-        for (; end < value.length; end++) {
-          if (value[end] === '(') depth++;
-          else if (value[end] === ')') {
-            depth--;
-            if (depth === 0) {
-              end++;
-              break;
-            }
-          }
-        }
-        const expr = value.slice(i, end);
-        result += toRgba(expr);
-        i = end;
-      } else {
-        result += value[i];
-        i++;
-      }
-    }
-    return result;
-  };
-
-  const elements = clonedDoc.querySelectorAll<HTMLElement | SVGElement>('*');
-  elements.forEach((el) => {
-    const computed = view.getComputedStyle(el);
-    for (const prop of COLOR_CSS_PROPERTIES) {
-      const val = computed.getPropertyValue(prop);
-      if (val && UNSUPPORTED_COLOR_FN_RE.test(val)) {
-        const normalized = replaceColorFunctions(val);
-        if (normalized !== val) {
-          el.style.setProperty(prop, normalized, 'important');
-        }
-      }
-    }
+  nodes.forEach((node) => {
+    const rect = node.getBoundingClientRect();
+    if (rect.height <= 0) return;
+    blocks.push({
+      top: Math.floor((rect.top - rootTop) * scale),
+      bottom: Math.ceil((rect.bottom - rootTop) * scale),
+      isHeading: /^H[1-4]$/.test(node.tagName) || node.classList.contains('break-after-avoid'),
+    });
   });
+
+  return blocks;
+}
+
+/**
+ * Finds a safe vertical cut position (in canvas pixels) <= targetY that does not
+ * split any atomic block or leave an orphan heading at the bottom of a page.
+ */
+function findSafeCutY(
+  currentY: number,
+  targetY: number,
+  maxSliceHeight: number,
+  blocks: BlockRange[]
+): number {
+  let cutY = targetY;
+
+  // Pull cutY above any atomic block that straddles targetY
+  for (const block of blocks) {
+    const blockHeight = block.bottom - block.top;
+    if (blockHeight <= 0 || blockHeight >= maxSliceHeight * 0.85) continue;
+
+    if (block.top < cutY && block.bottom > cutY) {
+      cutY = Math.min(cutY, block.top - 4);
+    }
+  }
+
+  // Avoid orphan headings right above the page break
+  for (const block of blocks) {
+    if (!block.isHeading) continue;
+    if (block.bottom <= cutY && cutY - block.top < maxSliceHeight * 0.15) {
+      cutY = Math.min(cutY, block.top - 4);
+    }
+  }
+
+  // Guard against degenerate cuts (e.g., giant unbreakable element)
+  if (cutY <= currentY + maxSliceHeight * 0.25) {
+    return targetY;
+  }
+
+  return cutY;
 }
 
 export function DownloadPDFButton({ data }: DownloadPDFButtonProps) {
@@ -121,28 +91,21 @@ export function DownloadPDFButton({ data }: DownloadPDFButtonProps) {
 
   const handleDownload = async () => {
     setIsGenerating(true);
-    
+
     try {
-      // Load html2pdf dynamically from CDN to avoid Next.js build issues
-      if (!(window as any).html2pdf) {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Failed to load html2pdf.js'));
-          document.body.appendChild(script);
-        });
-      }
-      
-      const html2pdf = (window as any).html2pdf;
-      
       const element = document.getElementById('cv-content-to-download');
       if (!element) {
         console.error('CV content element not found');
+        toast.error('Không tìm thấy nội dung CV để xuất PDF.');
         return;
       }
 
-      // Temporarily force A4 width for the capture
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas-pro'),
+        import('jspdf'),
+      ]);
+
+      // Temporarily force A4 width for capture
       const originalWidth = element.style.width;
       const originalMaxWidth = element.style.maxWidth;
       element.style.width = '210mm';
@@ -150,58 +113,120 @@ export function DownloadPDFButton({ data }: DownloadPDFButtonProps) {
 
       try {
         const fileName = getFileName();
+        const captureScale = 2;
+        const elementRect = element.getBoundingClientRect();
+        const atomicBlocks = collectAtomicBlocks(element, captureScale);
 
-        const opt = {
-          margin:       0,
-          filename:     fileName,
-          image:        { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas:  {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff',
-            scrollX: 0,
-            scrollY: 0,
-            windowWidth: 794, // 794px is approx 210mm at 96dpi
-            onclone: (clonedDoc: Document, clonedEl?: HTMLElement) => {
-              clonedDoc.documentElement.scrollTop = 0;
-              clonedDoc.documentElement.scrollLeft = 0;
-              if (clonedDoc.body) {
-                clonedDoc.body.scrollTop = 0;
-                clonedDoc.body.scrollLeft = 0;
+        const canvas = await html2canvas(element, {
+          scale: captureScale,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 794,
+          onclone: (clonedDoc: Document, clonedEl: HTMLElement) => {
+            clonedDoc.documentElement.scrollTop = 0;
+            clonedDoc.documentElement.scrollLeft = 0;
+
+            const target = clonedEl || clonedDoc.getElementById('cv-content-to-download');
+            if (target) {
+              // Unclip scrollable/narrow ancestors (e.g. w-1/2 overflow-y-auto h-screen)
+              let parent = target.parentElement;
+              while (parent && parent !== clonedDoc.body && parent !== clonedDoc.documentElement) {
+                parent.style.overflow = 'visible';
+                parent.style.height = 'auto';
+                parent.style.maxHeight = 'none';
+                parent.style.width = 'auto';
+                parent.style.maxWidth = 'none';
+                parent.style.transform = 'none';
+                parent.scrollTop = 0;
+                parent.scrollLeft = 0;
+                parent = parent.parentElement;
               }
 
-              const target = clonedEl || clonedDoc.getElementById('cv-content-to-download');
-              if (target) {
-                // Unclip scrollable/narrow ancestors (e.g. w-1/2 overflow-y-auto h-screen)
-                let parent = target.parentElement;
-                while (parent && parent !== clonedDoc.body && parent !== clonedDoc.documentElement) {
-                  parent.style.overflow = 'visible';
-                  parent.style.height = 'auto';
-                  parent.style.maxHeight = 'none';
-                  parent.style.width = 'auto';
-                  parent.style.maxWidth = 'none';
-                  parent.style.transform = 'none';
-                  parent.scrollTop = 0;
-                  parent.scrollLeft = 0;
-                  parent = parent.parentElement;
-                }
-
-                target.style.width = '794px';
-                target.style.maxWidth = '794px';
-                target.style.margin = '0';
-                target.style.backgroundColor = '#ffffff';
-                target.style.opacity = '1';
-                target.style.visibility = 'visible';
-              }
-
-              normalizeUnsupportedColors(clonedDoc);
-            },
+              target.style.width = `${elementRect.width || 794}px`;
+              target.style.maxWidth = `${elementRect.width || 794}px`;
+              target.style.margin = '0';
+              target.style.backgroundColor = '#ffffff';
+            }
           },
-          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
-        };
+        });
 
-        await html2pdf().set(opt).from(element).save();
+        // Re-scale block coordinates if actual canvas width differs slightly from elementRect * captureScale
+        const actualScaleRatio =
+          elementRect.width > 0 ? canvas.width / (elementRect.width * captureScale) : 1;
+        const scaledBlocks =
+          actualScaleRatio === 1
+            ? atomicBlocks
+            : atomicBlocks.map((b) => ({
+                top: Math.floor(b.top * actualScaleRatio),
+                bottom: Math.ceil(b.bottom * actualScaleRatio),
+                isHeading: b.isHeading,
+              }));
+
+        const pdf = new jsPDF({
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait',
+        });
+
+        const pageWidthMm = 210;
+        const pageHeightMm = 297;
+        const pxPerMm = canvas.width / pageWidthMm;
+        const bottomMarginMm = 10;
+        const subsequentTopMarginMm = 10;
+
+        let currentY = 0;
+        let pageIndex = 0;
+
+        while (currentY < canvas.height - 2) {
+          const topMarginMm = pageIndex === 0 ? 0 : subsequentTopMarginMm;
+          const usableHeightMm = pageHeightMm - topMarginMm - bottomMarginMm;
+          const maxSlicePx = Math.floor(usableHeightMm * pxPerMm);
+          const targetY = currentY + maxSlicePx;
+
+          const cutY =
+            targetY >= canvas.height
+              ? canvas.height
+              : findSafeCutY(currentY, targetY, maxSlicePx, scaledBlocks);
+
+          const sliceHeightPx = Math.max(1, cutY - currentY);
+
+          const sliceCanvas = document.createElement('canvas');
+          sliceCanvas.width = canvas.width;
+          sliceCanvas.height = sliceHeightPx;
+
+          const ctx = sliceCanvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+            ctx.drawImage(
+              canvas,
+              0,
+              currentY,
+              canvas.width,
+              sliceHeightPx,
+              0,
+              0,
+              canvas.width,
+              sliceHeightPx
+            );
+          }
+
+          if (pageIndex > 0) {
+            pdf.addPage();
+          }
+
+          const sliceImgData = sliceCanvas.toDataURL('image/jpeg', 0.98);
+          const sliceHeightMm = sliceHeightPx / pxPerMm;
+          pdf.addImage(sliceImgData, 'JPEG', 0, topMarginMm, pageWidthMm, sliceHeightMm);
+
+          currentY = cutY;
+          pageIndex++;
+        }
+
+        pdf.save(fileName);
 
         // Save to history
         const newRecord = {
@@ -212,35 +237,34 @@ export function DownloadPDFButton({ data }: DownloadPDFButtonProps) {
           position: data.personalInfo.title || 'Unknown',
         };
 
-        const storedHistory = localStorage.getItem("cv_download_history");
+        const storedHistory = localStorage.getItem('cv_download_history');
         let history = [];
         if (storedHistory) {
           try {
             history = JSON.parse(storedHistory);
           } catch (e) {
-            console.error("Failed to parse download history", e);
+            console.error('Failed to parse download history', e);
           }
         }
         history.push(newRecord);
-        localStorage.setItem("cv_download_history", JSON.stringify(history));
+        localStorage.setItem('cv_download_history', JSON.stringify(history));
       } finally {
-        // Always restore original styles even if PDF generation fails
         element.style.width = originalWidth;
         element.style.maxWidth = originalMaxWidth;
       }
-      
     } catch (error) {
       console.error('Error generating PDF:', error);
+      toast.error('Lỗi khi tạo PDF. Vui lòng thử lại.');
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <Button 
-      disabled={isGenerating} 
-      variant="outline" 
-      size="sm" 
+    <Button
+      disabled={isGenerating}
+      variant="outline"
+      size="sm"
       onClick={handleDownload}
     >
       {isGenerating ? (
