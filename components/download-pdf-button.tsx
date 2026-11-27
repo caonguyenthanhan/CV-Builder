@@ -159,8 +159,42 @@ export function DownloadPDFButton({ data }: DownloadPDFButtonProps) {
             scale: 2,
             useCORS: true,
             logging: false,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0,
             windowWidth: 794, // 794px is approx 210mm at 96dpi
-            onclone: (clonedDoc: Document) => {
+            onclone: (clonedDoc: Document, clonedEl?: HTMLElement) => {
+              clonedDoc.documentElement.scrollTop = 0;
+              clonedDoc.documentElement.scrollLeft = 0;
+              if (clonedDoc.body) {
+                clonedDoc.body.scrollTop = 0;
+                clonedDoc.body.scrollLeft = 0;
+              }
+
+              const target = clonedEl || clonedDoc.getElementById('cv-content-to-download');
+              if (target) {
+                // Unclip scrollable/narrow ancestors (e.g. w-1/2 overflow-y-auto h-screen)
+                let parent = target.parentElement;
+                while (parent && parent !== clonedDoc.body && parent !== clonedDoc.documentElement) {
+                  parent.style.overflow = 'visible';
+                  parent.style.height = 'auto';
+                  parent.style.maxHeight = 'none';
+                  parent.style.width = 'auto';
+                  parent.style.maxWidth = 'none';
+                  parent.style.transform = 'none';
+                  parent.scrollTop = 0;
+                  parent.scrollLeft = 0;
+                  parent = parent.parentElement;
+                }
+
+                target.style.width = '794px';
+                target.style.maxWidth = '794px';
+                target.style.margin = '0';
+                target.style.backgroundColor = '#ffffff';
+                target.style.opacity = '1';
+                target.style.visibility = 'visible';
+              }
+
               normalizeUnsupportedColors(clonedDoc);
             },
           },
